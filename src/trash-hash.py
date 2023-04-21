@@ -66,9 +66,7 @@ def test_against_hash(input: bytearray, target_hash: bytearray) -> bool:
 
 def first_preimage():
     print("Trying to find a message that produces %s" % THE_HASH.hex())
-    # a xor b = c
-    # c xor b = a
-    target = bytearray(b'\ff' * 16)
+    target = bytearray(b'\00' * 16)
     input = bytearray(b'\00' * 16)
     between = bytearray(16)
     # this is an arbituary target
@@ -76,8 +74,12 @@ def first_preimage():
     target[0] = ord('A')
 
     for i in range(0, 16):
-        between[i] = target[i] ^ THE_HASH[i]
+        
+        between[i] = target[i] ^ DEFINED_INITIAL[i]
+        print("%d:\tbtw %s\ttar %s\thash %s" % (i, between.hex(), target.hex(), THE_HASH.hex()))
         input[i] = between[i] ^ THE_HASH[i]
+        print("%d:\tbtw %s\ttar %s\thash %s" % (i, between.hex(), target.hex(), THE_HASH.hex()))
+        assert THE_HASH[i] == input[i] ^ target[i], "xor circle is broken"
     
     print(test_against_hash(input, THE_HASH))
 
