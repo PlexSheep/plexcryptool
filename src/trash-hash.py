@@ -33,28 +33,32 @@ def trash_hash(input: bytearray) -> bytearray:
     #    print("block: %s" % block.hex())
 
     # initilaize accumulator A_0 with the following constant values:
-    A_list = [DEFINED_INITIAL] * n
+    A = DEFINED_INITIAL
 
     # iterate over blocks
     for index, block in enumerate(blocks):
         if index == 0:
             pass
-        thing = bytes(by0 ^ by1 for by0, by1 in zip(A_list[index - 1], block))
-        A_list[index] = bytearray(thing)
-        print("final thing: %s" % A_list[index])
+        thing = bytes(by0 ^ by1 for by0, by1 in zip(A, block))
+        A = bytearray(thing)
 
-    A = bytearray(1)
-    A.pop()
+    return A
 
-    return A.join(A_list)
-
-def main():
+def use():
     some_bytes = bytearray(b'AAAA');
     print("hashed: %s" % some_bytes.hex())
     print('='*80)
     hashed = trash_hash(some_bytes)
     print('='*80)
     print("hashed: %s" % hashed.hex())
+
+def test_collision(a: bytearray, b: bytearray) -> bool:
+    return trash_hash(a) == trash_hash(b)
+
+def main():
+    payload_a = bytearray(b"AAAA")
+    payload_b = bytearray(random.randbytes(122))
+    print("a: %s\tb: %s" % (trash_hash(payload_a).hex(), trash_hash(payload_b).hex()))
 
 if __name__ == "__main__":
     main()
