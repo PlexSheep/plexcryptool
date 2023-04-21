@@ -5,7 +5,10 @@ Dirty hash we were covered in an excercise for Week 16 of 2023 in cryptography
 import math
 import random
 
-DEFINED_INITIAL = bytearray(b'\xa5\xa5\xa5\xa5\x5a\x5a\x5a\x55\x55\x55\xaa\xaa\xaa')
+DEFINED_INITIAL =   bytearray(b'\xa5\xa5\xa5\xa5\x5a\x5a\x5a\x5a\x55\x55\x55\x55\xaa\xaa\xaa\xaa')
+# the hash we want to find in the preimage attacks
+# comes from 'AAAA'
+THE_HASH =          bytearray(b'\xe4\xe4\xe4\xe4\xa5\xa5\xa5\xa5\xaa\xaa\xaa\xaa\x55\x55\x55\x55')
 
 def trash_hash(input: bytearray) -> bytearray:
     #print("original len is %s" % len(input))
@@ -45,23 +48,41 @@ def trash_hash(input: bytearray) -> bytearray:
     return A
 
 def use():
-    some_bytes = bytearray(b'AAAA');
-    print("hashed: %s" % some_bytes.hex())
-    print('='*80)
-    hashed = trash_hash(some_bytes)
-    print('='*80)
-    print("hashed: %s" % hashed.hex())
-
-def test_collision(a: bytearray, b: bytearray) -> bool:
-    return trash_hash(a) == trash_hash(b)
-
-def main():
     payload_a = bytearray(b"AAAA")
     # works, but is too cheap
     #payload_b = bytearray(b"AAAA\xff\xff")
     payload_b = bytearray(b'\xb2\xef\x82t<~<\xbe\x8d\xca\xe2\t\xdc7E\x10')
     print("a: %s\nb: %s" % (trash_hash(payload_a).hex(), trash_hash(payload_b).hex()))
     print("identical: %s" % test_collision(payload_a, payload_b))
+
+def test_collision(a: bytearray, b: bytearray) -> bool:
+    return trash_hash(a) == trash_hash(b)
+
+def test_against_hash(input: bytearray, target_hash: bytearray) -> bool:
+    hashed = trash_hash(input)
+    print("hashed variant:\t%s" % hashed.hex())
+    print("should be:\t%s" % THE_HASH.hex())
+    return trash_hash(input) == target_hash
+
+def first_preimage():
+    print("Trying to find a message that produces %s" % THE_HASH.hex())
+    # a xor b = c
+    # c xor b = a
+    target = bytearray(b'\ff' * 16)
+    input = bytearray(b'\00' * 16)
+    between = bytearray(16)
+    # this is an arbituary target
+    # should work for anything
+    target[0] = ord('A')
+
+    for i in range(0, 16):
+        between[i] = target[i] ^ THE_HASH[i]
+        input[i] = between[i] ^ THE_HASH[i]
+    
+    print(test_against_hash(input, THE_HASH))
+
+def main():
+    first_preimage()
 
 def bruteForce() -> bool:
     payload_a = bytearray(b"AAAA")
