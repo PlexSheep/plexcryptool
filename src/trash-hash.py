@@ -6,10 +6,6 @@ import math
 import random
 
 DEFINED_INITIAL =   bytearray(b'\xa5\xa5\xa5\xa5\x5a\x5a\x5a\x5a\x55\x55\x55\x55\xaa\xaa\xaa\xaa')
-# the hash we want to find in the preimage attacks
-# comes from 'AAAA'
-#THE_HASH =          bytearray(b'\xe4\xe4\xe4\xe4\xa5\xa5\xa5\xa5\xaa\xaa\xaa\xaa\x55\x55\x55\x55')
-THE_HASH =          bytearray(b'\xa4\xf4\xea\xee\xa5\xa5\xa5\xa5\xaa\xaa\xaa\xaa\x55\x55\x55\x55')
 
 def trash_hash(input: bytearray) -> bytearray:
     #print("original len is %s" % len(input))
@@ -67,6 +63,15 @@ def test_against_hash(input: bytearray, target_hash: bytearray) -> bool:
     print("should be:\t%s" % THE_HASH.hex())
     return trash_hash(input) == target_hash
 
+# the hash we want to find in the preimage attacks
+# comes from 'AAAA'
+#THE_HASH = bytearray(b'\xe4\xe4\xe4\xe4\xa5\xa5\xa5\xa5\xaa\xaa\xaa\xaa\x55\x55\x55\x55')
+# any custom hash you want to find a collision for:
+# needs to be 16 bytes long
+# TODO fill with padding if not long enough
+THE_HASH_ORIGIN = bytearray(b'amogus sus sus mogus more than 16 lol')
+THE_HASH = trash_hash(THE_HASH_ORIGIN)
+
 def first_preimage():
     print("Trying to find a message that produces %s" % THE_HASH.hex())
     target = bytearray(b'\00' * 16)
@@ -86,6 +91,9 @@ def first_preimage():
     
     input: bytearray = bytearray(bytes(a ^ b for a, b in zip(input, target)))
     print("for input '%s':\n %s" % (input, test_against_hash(input, THE_HASH)))
+
+    assert test_collision(input, THE_HASH_ORIGIN), "not the same thing: %s and %s" % (
+            trash_hash(input).hex(), trash_hash(THE_HASH_ORIGIN).hex())
 
 def main():
     first_preimage()
