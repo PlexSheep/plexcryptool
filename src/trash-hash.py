@@ -48,14 +48,6 @@ def trash_hash(input: bytearray) -> bytearray:
 
     return A
 
-def use():
-    payload_a = bytearray(b"AAAA")
-    # works, but is too cheap
-    #payload_b = bytearray(b"AAAA\xff\xff")
-    payload_b = bytearray(b'\xb2\xef\x82t<~<\xbe\x8d\xca\xe2\t\xdc7E\x10')
-    print("a: %s\nb: %s" % (trash_hash(payload_a).hex(), trash_hash(payload_b).hex()))
-    print("identical: %s" % test_collision(payload_a, payload_b))
-
 def test_collision(a: bytearray, b: bytearray) -> bool:
     return trash_hash(a) == trash_hash(b)
 
