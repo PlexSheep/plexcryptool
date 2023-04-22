@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
 Dirty hash we were covered in an excercise for Week 16 of 2023 in cryptography
+
+author: Christoph J. Scherr <software@cscherr.de>
+version control at: https://git.cscherr.de/PlexSheep/python-dhbw/src/branch/master/src/trash-hash.py
+License: MIT
 """
 import math
 import random
@@ -65,11 +69,12 @@ def test_against_hash(input: bytearray, target_hash: bytearray) -> bool:
 
 # the hash we want to find in the preimage attacks
 # comes from 'AAAA'
+#THE_HASH_ORIGIN = bytearray(b'AAAA')
 #THE_HASH = bytearray(b'\xe4\xe4\xe4\xe4\xa5\xa5\xa5\xa5\xaa\xaa\xaa\xaa\x55\x55\x55\x55')
 # any custom hash you want to find a collision for:
 # needs to be 16 bytes long
 # TODO fill with padding if not long enough
-THE_HASH_ORIGIN = bytearray(b'amogus sus sus mogus more than 16 lol')
+THE_HASH_ORIGIN = bytearray(b'1249239473289754927513214 21421 4124 214 21')
 THE_HASH = trash_hash(THE_HASH_ORIGIN)
 
 def first_preimage():
@@ -84,9 +89,9 @@ def first_preimage():
     for i in range(0, 16):
         
         between[i] = THE_HASH[i] ^ DEFINED_INITIAL[i]
-        print("%d:\tbtw %s\ttar %s\thash %s\n\tini %s\tinp %s" % (i, between.hex(), target.hex(), THE_HASH.hex(), DEFINED_INITIAL.hex(), input.hex()))
+        #print("%d:\tbtw %s\ttar %s\thash %s\n\tini %s\tinp %s" % (i, between.hex(), target.hex(), THE_HASH.hex(), DEFINED_INITIAL.hex(), input.hex()))
         input[i] = target[i] ^ between[i]
-        print("%d:\tbtw %s\ttar %s\thash %s\n\tini %s\tinp %s" % (i, between.hex(), target.hex(), THE_HASH.hex(), DEFINED_INITIAL.hex(), input.hex()))
+        #print("%d:\tbtw %s\ttar %s\thash %s\n\tini %s\tinp %s" % (i, between.hex(), target.hex(), THE_HASH.hex(), DEFINED_INITIAL.hex(), input.hex()))
         assert THE_HASH[i] == DEFINED_INITIAL[i] ^ between[i], "xor circle is broken: %s vs %s" % (hex(THE_HASH[i]), hex(input[i] ^ between[i]))
     
     input: bytearray = bytearray(bytes(a ^ b for a, b in zip(input, target)))
