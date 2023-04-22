@@ -6,6 +6,7 @@ you also need the chiffrat.txt file in the same directory.
 
 License: MIT
 author: Christoph J. Scherr <software@cscherr.de>
+source: https://git.cscherr.de/PlexSheep/python-dhbw/src/branch/master/src/basic-decrypt.py
 """
 
 MAX_IN_LINE = 16
@@ -69,12 +70,9 @@ def find_key(freq: dict, language_reference: list, full_text: list):
         print("Caesar keys ambiguos: %s" % caesar_keys)
     # was not caesar encrypted, continue with XOR checks
     # XOR
-    #for xor_key in range(0, 2**7):
-    #    decrypt = bytes(xor_key ^ common_char for common_char in full_text)
-    #    try:
-    #        print(("decry for kex %x:\t%s" % (xor_key, decrypt.decode(errors="backslashreplace"))).replace("\n", ""))
-    #    except:
-    #        print(("decry for kex %x:\t%s" % (xor_key, decrypt.hex())).replace("\n", ""))
+    for xor_key in range(0, 2**6):
+        decrypt = bytes(xor_key ^ common_char for common_char in full_text)
+        print(("decry for kex %x:\t%s" % (xor_key, decrypt.decode(errors="backslashreplace"))).replace("\n", ""))
     # -> manual review of the output of the above confirmed that the key for my cyphertext is 0x15
     THE_KEY = 0x15
     
