@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+This script is really bad and hacky, don't expect it to do anything.
+you also need the chiffrat.txt file in the same directory.
+
+License: MIT
+author: Christoph J. Scherr <software@cscherr.de>
+"""
+
 MAX_IN_LINE = 16
 DE_MOST_COMMON = ['E', 'N', 'I', 'R', 'A']
 EN_MOST_COMMON = ['E', 'T', 'A', 'O', 'I']
@@ -23,7 +31,7 @@ def main():
         print('=' * 80)
         print("Trying to find key from frequencies")
         print('=' * 80)
-        key = find_key(freq, DE_MOST_COMMON)
+        key = find_key(freq, DE_MOST_COMMON, intarr)
         if not key:
             print("The key could not be determined.")
         if key:
@@ -42,7 +50,7 @@ def freq_analysis(intarr: list):
         freql[item] += 1
     return dict(sorted(freql.items(), key=lambda item: item[1], reverse=True))
 
-def find_key(freq: dict, language_reference: list):
+def find_key(freq: dict, language_reference: list, full_text: list):
     # caesar
     caesar_keys = [0] * len(language_reference)
     for index, common_char in enumerate(language_reference):
@@ -61,11 +69,30 @@ def find_key(freq: dict, language_reference: list):
         print("Caesar keys ambiguos: %s" % caesar_keys)
     # was not caesar encrypted, continue with XOR checks
     # XOR
-    xor_keys = [0] * len(language_reference)
-    for index, common_char in enumerate(language_reference):
-        # this is probably garbage
-        item = list(freq.values())[index]
-        xor_keys[index] = item ^ ord(common_char)
+    #for xor_key in range(0, 2**7):
+    #    decrypt = bytes(xor_key ^ common_char for common_char in full_text)
+    #    try:
+    #        print(("decry for kex %x:\t%s" % (xor_key, decrypt.decode(errors="backslashreplace"))).replace("\n", ""))
+    #    except:
+    #        print(("decry for kex %x:\t%s" % (xor_key, decrypt.hex())).replace("\n", ""))
+    # -> manual review of the output of the above confirmed that the key for my cyphertext is 0x15
+    THE_KEY = 0x15
+    
+    # dump the text:
+    decrypted: list = []
+    for c in full_text:
+        decrypted.append((c ^ THE_KEY))
+    print("dump of text repr:")
+    output = ""
+    for c in decrypted:
+        output += chr(c)
+    print(output)
+    print("dumping decrypted with 0x15")
+    print(dump_intarr(decrypted))
+    exit()
+
+
+    return THE_KEY
 
     all_same = False
     for i in range(1, len(xor_keys)):
@@ -78,6 +105,8 @@ def find_key(freq: dict, language_reference: list):
     else:
         # ????????
         print("xor keys ambiguos: %s" % xor_keys)
+
+    return False
     
 
 def dump_frequencies(frequencies, chars_in_text: int = -1, print_top_x = 5):

@@ -7,6 +7,7 @@ version control at: https://git.cscherr.de/PlexSheep/python-dhbw/src/branch/mast
 License: MIT
 """
 import math
+import argparse
 import random
 
 DEFINED_INITIAL =   bytearray(b'\xa5\xa5\xa5\xa5\x5a\x5a\x5a\x5a\x55\x55\x55\x55\xaa\xaa\xaa\xaa')
@@ -93,8 +94,21 @@ def first_preimage():
             trash_hash(input).hex(), trash_hash(THE_HASH_ORIGIN).hex())
 
 def main():
-    first_preimage()
+    parser = argparse.ArgumentParser(prog="trash hash", description='implements a bad hash and shows how to break it. No option for preimage attack, --hash to get a hash.')
+    parser.add_argument('--hash', type=str,
+                    help='an input that should be hashed')
+    args = parser.parse_args()
 
+    if args.hash:
+        my_bytes: bytearray = bytearray(str.encode(args.hash))
+        hashed = trash_hash(my_bytes)
+        print("hash for \"%s\" is:\n%s" % (args.hash, hashed.hex()))
+    else:
+        first_preimage()
+
+"""
+Don't use this, too inefficient
+"""
 def bruteForce() -> bool:
     payload_a = bytearray(b"AAAA")
     foundCollision = False
