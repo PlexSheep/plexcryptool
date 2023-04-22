@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # this is literal garbage
 # does not even work for the bad hash
 def calcHash():

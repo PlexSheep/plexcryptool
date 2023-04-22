@@ -8,7 +8,8 @@ import random
 DEFINED_INITIAL =   bytearray(b'\xa5\xa5\xa5\xa5\x5a\x5a\x5a\x5a\x55\x55\x55\x55\xaa\xaa\xaa\xaa')
 # the hash we want to find in the preimage attacks
 # comes from 'AAAA'
-THE_HASH =          bytearray(b'\xe4\xe4\xe4\xe4\xa5\xa5\xa5\xa5\xaa\xaa\xaa\xaa\x55\x55\x55\x55')
+#THE_HASH =          bytearray(b'\xe4\xe4\xe4\xe4\xa5\xa5\xa5\xa5\xaa\xaa\xaa\xaa\x55\x55\x55\x55')
+THE_HASH =          bytearray(b'\xa4\xf4\xea\xee\xa5\xa5\xa5\xa5\xaa\xaa\xaa\xaa\x55\x55\x55\x55')
 
 def trash_hash(input: bytearray) -> bytearray:
     #print("original len is %s" % len(input))
@@ -59,6 +60,8 @@ def test_collision(a: bytearray, b: bytearray) -> bool:
     return trash_hash(a) == trash_hash(b)
 
 def test_against_hash(input: bytearray, target_hash: bytearray) -> bool:
+    print("given input:\t%s" % input.hex())
+    print("given input (repr):\t%s" % input.decode(errors="ignore"))
     hashed = trash_hash(input)
     print("hashed variant:\t%s" % hashed.hex())
     print("should be:\t%s" % THE_HASH.hex())
@@ -75,13 +78,14 @@ def first_preimage():
 
     for i in range(0, 16):
         
-        between[i] = target[i] ^ DEFINED_INITIAL[i]
-        print("%d:\tbtw %s\ttar %s\thash %s" % (i, between.hex(), target.hex(), THE_HASH.hex()))
-        input[i] = between[i] ^ THE_HASH[i]
-        print("%d:\tbtw %s\ttar %s\thash %s" % (i, between.hex(), target.hex(), THE_HASH.hex()))
-        assert THE_HASH[i] == input[i] ^ target[i], "xor circle is broken"
+        between[i] = THE_HASH[i] ^ DEFINED_INITIAL[i]
+        print("%d:\tbtw %s\ttar %s\thash %s\n\tini %s\tinp %s" % (i, between.hex(), target.hex(), THE_HASH.hex(), DEFINED_INITIAL.hex(), input.hex()))
+        input[i] = target[i] ^ between[i]
+        print("%d:\tbtw %s\ttar %s\thash %s\n\tini %s\tinp %s" % (i, between.hex(), target.hex(), THE_HASH.hex(), DEFINED_INITIAL.hex(), input.hex()))
+        assert THE_HASH[i] == DEFINED_INITIAL[i] ^ between[i], "xor circle is broken: %s vs %s" % (hex(THE_HASH[i]), hex(input[i] ^ between[i]))
     
-    print(test_against_hash(input, THE_HASH))
+    input: bytearray = bytearray(bytes(a ^ b for a, b in zip(input, target)))
+    print("for input '%s':\n %s" % (input, test_against_hash(input, THE_HASH)))
 
 def main():
     first_preimage()
