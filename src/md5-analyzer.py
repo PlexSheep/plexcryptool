@@ -27,28 +27,31 @@ def main():
     if args.iterate:
         if not args.input:
             args.input = ""
-        print('='*80)
+        if not args.quiet:
+            print('='*80)
         hashlist = []
         searchbytes = "0000"
         for i in range(0, args.max + 1):
             # args.max should be included, so +x for the counter
             input = (args.input + str(i))
             hash = hashlib.md5(input.encode())
+            found = False
             # print only every 1000 lines for performance
-            if not args.quiet and i % 1000 == 0 or args.print_all:
-                print("inp %s\t\t| out %s" % (input, hash.hexdigest()))
             if hash.hexdigest()[0:4] == searchbytes:
+                found = True
                 hashlist.append((input, hash.hexdigest()))
-                if not args.quiet:
+            if not args.quiet and (found or i % 1000 == 0 or args.print_all):
+                print("inp %s\t\t| out %s" % (input, hash.hexdigest()))
+                if found:
                     print("^" * 80)
         print('='*80)
         for (index, hash) in hashlist:
             print("inp %s\t\t| has %s" % (index, hash))
         print('='*80)
-        size_searchbytes = 2**16
-        expected = 16**32 / size_searchbytes # 32 hex value chars in an md5 hash
-        print("found %d items (%f%%)" % (len(hashlist), len(hashlist) / size_searchbytes))
-        print("Expected %d (%f%%) from %d" % (expected, expected / size_searchbytes, args.max))
+        size_searchbytes = 16**4
+        expected = args.max / size_searchbytes # 32 hex value chars in an md5 hash
+        print("found %d items (%f%%) from %d" % (len(hashlist), len(hashlist) / size_searchbytes, args.max))
+        print("Expected %f (%f%%) from %d" % (expected, expected / size_searchbytes, args.max))
         exit()
 
     if args.input:
