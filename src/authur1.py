@@ -42,9 +42,12 @@ def inner_authur1(input: int) -> int:
     # should really be 32 bit block
     # python sucks for binary operations
     # assert input.bit_length() == 32, "not a 32 bit int :("
+    assert input.bit_length() <= 32, "input length is <= 32: %d" % input.bit_length()
     output: int
 
     output = input ^ (rotr(input, SHIFT_LENGTH))
+
+    assert output.bit_length() <= 32, "output length is <= 32: %d" % output.bit_length()
 
     return output
 
@@ -66,7 +69,7 @@ def authur1(input: bytearray) -> bytearray:
                     # internal_buffer
                     int.from_bytes(internal_buffer, byteorder='big', signed=False)
                     )
-                .to_bytes(byteorder="big", signed=False)
+                .to_bytes(length=2**16, byteorder="big", signed=False)
                 )
     # finished loading input bytes into the hash, fill with padding and do it one last time
     while not len(internal_buffer) == 4:
@@ -82,14 +85,14 @@ def authur1(input: bytearray) -> bytearray:
                 # internal_buffer
                 int.from_bytes(internal_buffer, byteorder='big', signed=False)
                 )
-            .to_bytes(byteorder="big", signed=False)
+                .to_bytes(length=2**16, byteorder="big", signed=False)
             )
 
     return accumulator
 
 def main():
     parser = argparse.ArgumentParser(prog="authur1 authentication hash", description='Implementation and attack for the custom authur1 hash')
-    parser.add_argument('--hash', type=str,
+    parser.add_argument('-i', '--hash', type=str,
                     help='an input that should be hashed')
     args = parser.parse_args()
 
