@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-
 """
 This script is really bad and hacky, don't expect it to do anything.
 you also need the chiffrat.txt file in the same directory.
 
-License: MIT
-author: Christoph J. Scherr <software@cscherr.de>
-source: https://git.cscherr.de/PlexSheep/python-dhbw/src/branch/master/src/basic-decrypt.py
+@license: MIT
+@author: Christoph J. Scherr <software@cscherr.de>
+@source: https://git.cscherr.de/PlexSheep/python-dhbw/src/branch/master/src/basic-decrypt.py
 """
-
 MAX_IN_LINE = 16
 DE_MOST_COMMON = ['E', 'N', 'I', 'R', 'A']
 EN_MOST_COMMON = ['E', 'T', 'A', 'O', 'I']

@@ -2,9 +2,9 @@
 """
 Dirty hash we covered in an excercise for Week 16 of 2023 in cryptography
 
-author: Christoph J. Scherr <software@cscherr.de>
-version control at: https://git.cscherr.de/PlexSheep/python-dhbw/src/branch/master/src/trash-hash.py
-License: MIT
+@author: Christoph J. Scherr <software@cscherr.de>
+@source: https://git.cscherr.de/PlexSheep/python-dhbw/src/branch/master/src/trash-hash.py
+@license: MIT
 """
 import math
 import argparse
