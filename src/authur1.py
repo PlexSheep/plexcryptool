@@ -10,48 +10,21 @@ Since this (auth) hash did not have a name before, I gave it the name 'authur1'
 """
 import math
 import argparse
-from ctypes import c_uint32
 
 # constants for authur1
 SHIFT_LENGTH = 17
-DEFINED_INITIAL = bytes([0x52, 0x4f, 0x46, 0x4c])
+DEFINED_INITIAL = bytearray([0x52, 0x4f, 0x46, 0x4c])
+PADDING = 0xff
 
-"""
-C implementation for bit rotating:
-see https://en.wikipedia.org/wiki/Circular_shift#Implementing_circular_shifts
-
-```c
-/*
- * Shift operations in C are only defined for shift values which are
- * not negative and smaller than sizeof(value) * CHAR_BIT.
- * The mask, used with bitwise-and (&), prevents undefined behaviour
- * when the shift count is 0 or >= the width of unsigned int.
- */
-
-#include <stdint.h>  // for uint32_t, to get 32-bit-wide rotates, regardless of the size of int.
-#include <limits.h>  // for CHAR_BIT
-
-uint32_t rotl32 (uint32_t value, unsigned int count) {
-    const unsigned int mask = CHAR_BIT * sizeof(value) - 1;
-    count &= mask;
-    return (value << count) | (value >> (-count & mask));
-}
-
-uint32_t rotr32 (uint32_t value, unsigned int count) {
-    const unsigned int mask = CHAR_BIT * sizeof(value) - 1;
-    count &= mask;
-    return (value >> count) | (value << (-count & mask));
-}
-```
-"""
+# constants for Circular shifting
+# constant value defined in limits.h, it's 8 (bit) on my machine, on yours probably too.
+CHAR_BIT = 8
+# python is being a dynamic dumbass, do a 32 bit shift ~ 4 byte
+VALUE_SIZE = 4
 
 """
 The rotations are tested agains a c implementation and seem to work fine.
 """
-# constant value defined in limits.h, it's 8 (bit) on my machine, on yours probably too.
-CHAR_BIT = 8
-# python is being a dynamic dumbass, do a 32 bit shift / 4 byte
-VALUE_SIZE = 4
 def rotl(value: int, count: int) -> int:
     mask: int = CHAR_BIT * VALUE_SIZE - 1;
     count &= mask;
@@ -62,23 +35,69 @@ def rotr(value: int, count: int) -> int:
     count &= mask;
     return (value >> count) | (value << (-count & mask));
 
-def Q(input: c_uint32) -> c_uint32:
-    output: c_uint32
+"""
+Now for the actual implementation of authur1
+"""
+def inner_authur1(input: int) -> int:
+    # should really be 32 bit block
+    # python sucks for binary operations
+    # assert input.bit_length() == 32, "not a 32 bit int :("
+    output: int
 
-    output = input ^ (rot_r(input, SHIFT_LENGTH))
+    output = input ^ (rotr(input, SHIFT_LENGTH))
 
     return output
 
-def H(input: bytes) -> bytes:
+def authur1(input: bytearray) -> bytearray:
+    internal_buffer: bytearray = bytearray()
+    accumulator: bytearray = DEFINED_INITIAL
+    for in_byte in input:
+        if not len(internal_buffer) == 4:
+            internal_buffer.append(in_byte)
+            continue
+        # else
+        assert len(internal_buffer) == 4, "internal buffer of authur1 not 4 byte long"
+        accumulator = bytearray(
+                inner_authur1(
+                    # accumulator
+                    int.from_bytes(accumulator, byteorder='big', signed=False)
+                    # XOR
+                    ^
+                    # internal_buffer
+                    int.from_bytes(internal_buffer, byteorder='big', signed=False)
+                    )
+                .to_bytes(byteorder="big", signed=False)
+                )
+    # finished loading input bytes into the hash, fill with padding and do it one last time
+    while not len(internal_buffer) == 4:
+        internal_buffer.append(PADDING)
+    assert len(internal_buffer) == 4, "internal buffer of authur1 not 4 byte long"
+    # same as above, one last time
+    accumulator = bytearray(
+            inner_authur1(
+                # accumulator
+                int.from_bytes(accumulator, byteorder='big', signed=False)
+                # XOR
+                ^
+                # internal_buffer
+                int.from_bytes(internal_buffer, byteorder='big', signed=False)
+                )
+            .to_bytes(byteorder="big", signed=False)
+            )
 
-
-    return input
+    return accumulator
 
 def main():
-    a: str = input()
-    ai = int(a)
-    print((ai))
-    print((rotr(ai,17)))
+    parser = argparse.ArgumentParser(prog="authur1 authentication hash", description='Implementation and attack for the custom authur1 hash')
+    parser.add_argument('--hash', type=str,
+                    help='an input that should be hashed')
+    args = parser.parse_args()
+
+    if args.hash:
+        my_bytes: bytearray = bytearray(str.encode(args.hash))
+        hashed = authur1(my_bytes)
+        print("hash for \"%s\" is:\n%s" % (args.hash, hashed.hex()))
+    parser.print_help()
 
 if __name__ == "__main__":
     main()
