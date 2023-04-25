@@ -134,6 +134,8 @@ def main():
                     help='perform tests')
     parser.add_argument('-v', '--verbose', action="store_true",
                     help='print many things')
+    parser.add_argument('-e', '--extension-attack', type=str,
+                        help='perform an extension attack, this option requires known mics in the form: "deadbeed,abababab,ecbadf,..."')
     parser.add_argument('-a', '--auth', action="store_true",
                     help='generate a message integrity code (mic), needs a value to be hashed. If no key is specified, a random key will be generated.')
     args = parser.parse_args()
@@ -149,7 +151,7 @@ def main():
                 key.extend(random.randbytes(16 - len(key)))
             elif len(key) > 16:
                 print("Your key is too long!")
-                exit()
+                exit(1)
         else:
             key: bytearray = bytearray(random.randbytes(16))
         my_bytes: bytearray = bytearray(str.encode(args.hash))
@@ -162,6 +164,24 @@ def main():
         my_bytes: bytearray = bytearray(str.encode(args.hash))
         hashed: bytearray = authur1(my_bytes, args.verbose)
         print("hash for \"%s\" is:\n%s" % (args.hash, hashed.hex()))
+        exit()
+    elif args.extension_attack:
+        # TODO
+        hex_strs: list = args.extension_attack.split(",")
+        mics: list = []   # will store our processed given hashes
+        for mic in hex_strs:
+            try:
+                assert (len(mic) == 8), "given hash '%s' formatted incorrectly" % mic
+                mic_int: int = int(mic, 16)
+                mics.append(bytearray(mic_int.to_bytes(4)))
+            except Exception:
+                print("given hash '%s' formatted incorrectly" % mic)
+                exit(1)
+
+        # now attack authur1 with the given mics
+        # TODO extension attack
+        print("extension attack is still TODO")
+
         exit()
     parser.print_help()
 
