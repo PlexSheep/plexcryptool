@@ -14,7 +14,7 @@ import random
 # FIXME make proper pyi Implementation for the rust part
 # only used for bit rotation
 # your editor might complain here, because it can only find a pyi file with type annotations.
-# restassured, you just need to compile the rust part with maturin develop and you will be fine.
+# rest assured, you just need to compile the rust part with maturin develop and you will be fine.
 from plexcryptool import binary
 
 # constants for authur1
