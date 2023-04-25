@@ -23,16 +23,16 @@ CHAR_BIT = 8
 VALUE_SIZE = 4
 
 """
-The rotations are tested agains a c implementation and seem to work fine.
+The rotations are tested agains a c implementation and are still garbage. FIXME
 """
 def rotl(value: int, count: int) -> int:
     mask: int = CHAR_BIT * VALUE_SIZE - 1;
-    count &= mask;
+    count = count & mask
     return (value << count) | (value >> (-count & mask));
 
 def rotr(value: int, count: int) -> int:
     mask: int = CHAR_BIT * VALUE_SIZE - 1;
-    count &= mask;
+    count = count & mask
     return (value >> count) | (value << (-count & mask));
 
 """
