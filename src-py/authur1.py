@@ -9,6 +9,7 @@ Since this (auth) hash did not have a name before, I gave it the name 'authur1'
 @source: https://git.cscherr.de/PlexSheep/python-dhbw/src/branch/master/src/authur1.py
 """
 import argparse
+from sre_constants import IN_UNI_IGNORE
 
 # FIXME make proper pyi Implementation for the rust part
 from plexcryptool import binary
@@ -39,6 +40,8 @@ def inner_authur1(input: int) -> int:
     return output
 
 def authur1(input: bytearray, verbose: bool = False) -> bytearray:
+    if verbose:
+        print("input: %s" % input)
     internal_buffer: bytearray = bytearray()
     accumulator: bytearray = DEFINED_INITIAL
     for in_byte in input:
@@ -79,9 +82,11 @@ def authur1(input: bytearray, verbose: bool = False) -> bytearray:
     if verbose:
         print("returning state: %s" % accumulator.hex())
     # now Q the accumulator and return
-    accuint = int.from_bytes(accumulator)
-    accuint = inner_authur1(accuint)
-    accumulator = bytearray(accuint.to_bytes(4))
+    # if input = "" this step breaks things, just remove it.
+    if len(input) != 0:
+        accuint = int.from_bytes(accumulator)
+        accuint = inner_authur1(accuint)
+        accumulator = bytearray(accuint.to_bytes(4))
     return accumulator
 
 def test():
@@ -95,7 +100,7 @@ def test():
 
     print("Q aka inner_authur1 passed the test")
 
-    ha = authur1(bytearray(0))
+    ha = authur1(bytearray(0), True)
     hb = authur1(bytearray(b'A'))
     hc = authur1(bytearray(b'AB'))
     hd = authur1(bytearray(b'ABC'))
