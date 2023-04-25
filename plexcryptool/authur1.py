@@ -33,10 +33,9 @@ def inner_authur1(input: int) -> int:
     passes all tests
     """
     assert input.bit_length() <= 32, "input length is <= 32: %d" % input.bit_length()
-    output: int
 
     # plexcryptool.binary uses u32 for shifting
-    output = input ^ (binary.rotl32(input, SHIFT_LENGTH))
+    output: int = input ^ (binary.rotl32(input, SHIFT_LENGTH))
 
     assert output.bit_length() <= 32, "output length is <= 32: %d" % output.bit_length()
 
@@ -58,9 +57,9 @@ def authur1(input: bytearray, verbose: bool = False) -> bytearray:
             continue
         # else
         assert len(internal_buffer) == 4, "internal buffer of authur1 not 4 byte long"
-        accuint = int.from_bytes(accumulator)
-        accuint = inner_authur1(accuint ^ int.from_bytes(internal_buffer))
-        accumulator = bytearray(accuint.to_bytes(4))
+        accuint: int = int.from_bytes(accumulator)
+        accuint: int = inner_authur1(accuint ^ int.from_bytes(internal_buffer))
+        accumulator: bytearray = bytearray(accuint.to_bytes(4))
         internal_buffer.clear()
         assert len(internal_buffer) == 0
         internal_buffer.append(in_byte)
@@ -77,9 +76,9 @@ def authur1(input: bytearray, verbose: bool = False) -> bytearray:
     assert len(internal_buffer) == 4, "internal buffer of authur1 not 4 byte long"
     # same as above, one last time
     assert len(accumulator) == 4, "accumulator too long: %d bytes" % len(accumulator)
-    accuint = int.from_bytes(accumulator)
-    accuint = inner_authur1(accuint ^ int.from_bytes(internal_buffer))
-    accumulator = bytearray(accuint.to_bytes(4))
+    accuint: int = int.from_bytes(accumulator)
+    accuint: int = inner_authur1(accuint ^ int.from_bytes(internal_buffer))
+    accumulator: bytearray = bytearray(accuint.to_bytes(4))
 
     assert len(accumulator) == 4, "accumulator too long: %d bytes" % len(accumulator)
     if verbose:
@@ -87,28 +86,28 @@ def authur1(input: bytearray, verbose: bool = False) -> bytearray:
     # now Q the accumulator and return
     # if input = "" this step breaks things, just remove it.
     if len(input) != 0:
-        accuint = int.from_bytes(accumulator)
-        accuint = inner_authur1(accuint)
-        accumulator = bytearray(accuint.to_bytes(4))
+        accuint: int = int.from_bytes(accumulator)
+        accuint: int = inner_authur1(accuint)
+        accumulator: bytearray = bytearray(accuint.to_bytes(4))
     return accumulator
 
 def test():
-    init = int.from_bytes(DEFINED_INITIAL)
-    a = inner_authur1(init)
-    b = inner_authur1(a)
-    c = inner_authur1(b)
+    init: int = int.from_bytes(DEFINED_INITIAL)
+    a: int = inner_authur1(init)
+    b: int = inner_authur1(a)
+    c: int = inner_authur1(b)
     assert a == 0xded7e2d2, "Q(S0) returns wrong value: %s" % hex(a)
     assert b == 0x1b725f7d, "Q(Q(S0)) returns wrong value: %s" % hex(b)
     assert c == 0xa5886999, "Q(Q(Q(S0))) returns wrong value: %s" % hex(c)
 
     print("Q aka inner_authur1 passed the test")
 
-    ha = authur1(bytearray(0))
-    hb = authur1(bytearray(b'A'))
-    hc = authur1(bytearray(b'AB'))
-    hd = authur1(bytearray(b'ABC'))
-    he = authur1(bytearray(b'ABCD'))
-    hf = authur1(bytearray(b'ABCDE'))
+    ha: bytearray = authur1(bytearray(0))
+    hb: bytearray = authur1(bytearray(b'A'))
+    hc: bytearray = authur1(bytearray(b'AB'))
+    hd: bytearray = authur1(bytearray(b'ABC'))
+    he: bytearray = authur1(bytearray(b'ABCD'))
+    hf: bytearray = authur1(bytearray(b'ABCDE'))
     assert int.from_bytes(ha) == 0xded7e2d2, "H(\"\") returns wrong value: %s" % ha.hex()
     assert int.from_bytes(hb) == 0x5d725f7f, "H(\"A\") returns wrong value: %s" % hb.hex()
     assert int.from_bytes(hc) == 0x5f3b5f7f, "H(\"AB\") returns wrong value: %s" % hc.hex()
@@ -122,7 +121,7 @@ def test():
 def keyed_hash(message: bytearray, key: bytearray) -> bytearray:
     assert len(key) == 16, "key is not 16 Byte long: %s" % len(key)
     input: bytearray = key + message
-    mic = authur1(input)
+    mic: bytearray = authur1(input)
     return mic
 
 def main():
@@ -144,7 +143,7 @@ def main():
         exit()
     elif args.auth and args.hash:
         if args.key:
-            key = bytearray(args.key.encode())
+            key: bytearray = bytearray(args.key.encode())
             if len(key) < 16:
                 print("Your key is not long enough and will be padded with random bytes.")
                 key.extend(random.randbytes(16 - len(key)))
@@ -152,7 +151,7 @@ def main():
                 print("Your key is too long!")
                 exit()
         else:
-            key = bytearray(random.randbytes(16))
+            key: bytearray = bytearray(random.randbytes(16))
         my_bytes: bytearray = bytearray(str.encode(args.hash))
         mic: bytearray = keyed_hash(my_bytes, key)
         print("KEY (str): %s" % key.decode(errors="replace"))
@@ -161,7 +160,7 @@ def main():
         exit()
     elif args.hash:
         my_bytes: bytearray = bytearray(str.encode(args.hash))
-        hashed = authur1(my_bytes, args.verbose)
+        hashed: bytearray = authur1(my_bytes, args.verbose)
         print("hash for \"%s\" is:\n%s" % (args.hash, hashed.hex()))
         exit()
     parser.print_help()
