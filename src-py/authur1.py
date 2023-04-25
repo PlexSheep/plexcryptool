@@ -8,9 +8,9 @@ Since this (auth) hash did not have a name before, I gave it the name 'authur1'
 @license MIT
 @source: https://git.cscherr.de/PlexSheep/python-dhbw/src/branch/master/src/authur1.py
 """
-import math
 import argparse
 
+# FIXME make proper pyi Implementation for the rust part
 from plexcryptool import binary
 
 # constants for authur1
@@ -38,11 +38,16 @@ def inner_authur1(input: int) -> int:
 
     return output
 
-def authur1(input: bytearray) -> bytearray:
+def authur1(input: bytearray, verbose: bool = False) -> bytearray:
     internal_buffer: bytearray = bytearray()
     accumulator: bytearray = DEFINED_INITIAL
     for in_byte in input:
-        if not len(internal_buffer) == 4:
+        if verbose:
+            print("current in_byte: %s" % chr(in_byte))
+            print("current buffer: %s" % internal_buffer.hex())
+        if len(internal_buffer) < 4:
+            if verbose:
+                print("loading buffer")
             internal_buffer.append(in_byte)
             continue
         # else
@@ -50,10 +55,19 @@ def authur1(input: bytearray) -> bytearray:
         accuint = int.from_bytes(accumulator)
         accuint = inner_authur1(accuint ^ int.from_bytes(internal_buffer))
         accumulator = bytearray(accuint.to_bytes(4))
+        internal_buffer.clear()
+        assert len(internal_buffer) == 0
+        internal_buffer.append(in_byte)
         assert len(accumulator) == 4, "accumulator too long: %d bytes" % len(accumulator)
+    if verbose:
+        print("internal state after the bytes were read: %s" % accumulator.hex())
     # finished loading input bytes into the hash, fill with padding and do it one last time
-    while not len(internal_buffer) == 4:
+    if verbose:
+        print("buffer pre last fill: %s" % internal_buffer.hex())
+    while len(internal_buffer) < 4:
         internal_buffer.append(PADDING)
+    if verbose:
+        print("buffer after last fill: %s" % internal_buffer.hex())
     assert len(internal_buffer) == 4, "internal buffer of authur1 not 4 byte long"
     # same as above, one last time
     assert len(accumulator) == 4, "accumulator too long: %d bytes" % len(accumulator)
@@ -62,6 +76,12 @@ def authur1(input: bytearray) -> bytearray:
     accumulator = bytearray(accuint.to_bytes(4))
 
     assert len(accumulator) == 4, "accumulator too long: %d bytes" % len(accumulator)
+    if verbose:
+        print("returning state: %s" % accumulator.hex())
+    # now Q the accumulator and return
+    accuint = int.from_bytes(accumulator)
+    accuint = inner_authur1(accuint)
+    accumulator = bytearray(accuint.to_bytes(4))
     return accumulator
 
 def test():
@@ -97,11 +117,13 @@ def main():
                     help='an input that should be hashed')
     parser.add_argument('-t', '--test', action="store_true",
                     help='perform tests')
+    parser.add_argument('-v', '--verbose', action="store_true",
+                    help='print many things')
     args = parser.parse_args()
 
     if args.hash:
         my_bytes: bytearray = bytearray(str.encode(args.hash))
-        hashed = authur1(my_bytes)
+        hashed = authur1(my_bytes, args.verbose)
         print("hash for \"%s\" is:\n%s" % (args.hash, hashed.hex()))
         exit()
     elif args.test:
