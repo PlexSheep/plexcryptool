@@ -2,8 +2,8 @@
 """
 A small script to help analyze the md5 hash function.
 
-@author Christoph J. Scherr <software@cscherr.de>
-@license MIT
+@author: Christoph J. Scherr <software@cscherr.de>
+@license: MIT
 @source: https://git.cscherr.de/PlexSheep/python-dhbw/src/branch/master/src/md5-analyzer.py
 TODO do I need to implement md5 by myself for the assignment?
 """

@@ -4,8 +4,8 @@ A custom authentication hash function aswell as an automated extension attack fo
 
 Since this (auth) hash did not have a name before, I gave it the name 'authur1'
 
-@author Christoph J. Scherr <software@cscherr.de>
-@license MIT
+@author: Christoph J. Scherr <software@cscherr.de>
+@license: MIT
 @source: https://git.cscherr.de/PlexSheep/python-dhbw/src/branch/master/src/authur1.py
 """
 import argparse
