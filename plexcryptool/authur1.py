@@ -9,9 +9,12 @@ Since this (auth) hash did not have a name before, I gave it the name 'authur1'
 @source: https://git.cscherr.de/PlexSheep/python-dhbw/src/branch/master/src/authur1.py
 """
 import argparse
-from sre_constants import IN_UNI_IGNORE
+import random
 
 # FIXME make proper pyi Implementation for the rust part
+# only used for bit rotation
+# your editor might complain here, because it can only find a pyi file with type annotations.
+# restassured, you just need to compile the rust part with maturin develop and you will be fine.
 from plexcryptool import binary
 
 # constants for authur1
@@ -100,7 +103,7 @@ def test():
 
     print("Q aka inner_authur1 passed the test")
 
-    ha = authur1(bytearray(0), True)
+    ha = authur1(bytearray(0))
     hb = authur1(bytearray(b'A'))
     hc = authur1(bytearray(b'AB'))
     hd = authur1(bytearray(b'ABC'))
@@ -116,23 +119,50 @@ def test():
     print("H aka authur1 passed the test")
     print("All tests passed!")
 
+def keyed_hash(message: bytearray, key: bytearray) -> bytearray:
+    assert len(key) == 16, "key is not 16 Byte long: %s" % len(key)
+    input: bytearray = key + message
+    mic = authur1(input)
+    return mic
+
 def main():
-    parser = argparse.ArgumentParser(prog="authur1 authentication hash", description='Implementation and attack for the custom authur1 hash')
+    parser = argparse.ArgumentParser(prog="authur1 authentication hash", description='Implementation and attack for the custom authur1 hash. Don\'t actually use this hash!')
     parser.add_argument('-i', '--hash', type=str,
                     help='an input that should be hashed')
+    parser.add_argument('-k', '--key', type=str,
+                    help='an key that should be used with auth mode')
     parser.add_argument('-t', '--test', action="store_true",
                     help='perform tests')
     parser.add_argument('-v', '--verbose', action="store_true",
                     help='print many things')
+    parser.add_argument('-a', '--auth', action="store_true",
+                    help='generate a message integrity code (mic), needs a value to be hashed. If no key is specified, a random key will be generated.')
     args = parser.parse_args()
 
-    if args.hash:
+    if args.test:
+        test()
+        exit()
+    elif args.auth and args.hash:
+        if args.key:
+            key = bytearray(args.key.encode())
+            if len(key) < 16:
+                print("Your key is not long enough and will be padded with random bytes.")
+                key.extend(random.randbytes(16 - len(key)))
+            elif len(key) > 16:
+                print("Your key is too long!")
+                exit()
+        else:
+            key = bytearray(random.randbytes(16))
+        my_bytes: bytearray = bytearray(str.encode(args.hash))
+        mic: bytearray = keyed_hash(my_bytes, key)
+        print("KEY (str): %s" % key.decode(errors="replace"))
+        print("KEY (hex): %s" % key.hex())
+        print("MIC: %s" % mic.hex())
+        exit()
+    elif args.hash:
         my_bytes: bytearray = bytearray(str.encode(args.hash))
         hashed = authur1(my_bytes, args.verbose)
         print("hash for \"%s\" is:\n%s" % (args.hash, hashed.hex()))
-        exit()
-    elif args.test:
-        test()
         exit()
     parser.print_help()
 
