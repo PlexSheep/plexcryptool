@@ -116,6 +116,9 @@ def test():
     assert int.from_bytes(hf) == 0x2f69af58, "H(\"ABCDE\") returns wrong value: %s" % hf.hex()
 
     print("H aka authur1 passed the test")
+
+    test_extension_attack()
+
     print("All tests passed!")
 
 def keyed_hash(message: bytearray, key: bytearray) -> bytearray:
@@ -123,6 +126,63 @@ def keyed_hash(message: bytearray, key: bytearray) -> bytearray:
     input: bytearray = key + message
     mic: bytearray = authur1(input)
     return mic
+
+def extension_attack(valid_pairs: list):
+    """
+    Extension attack against keyed hash of authur1
+
+    Procedure:
+    valid_pairs parsed in main()
+
+    > Consider a case where the length of K || m together with internal 
+    > length fields is a multiple of the internal block size.
+
+    > The output value now corresponds tightly with the internal state of H 
+    > after the digesting the message
+
+    > This gives rise to a so-called extension attack
+
+    > An attacker observes a message that is the correct length and the attacker 
+    > also knows the legitimate (public) MIC of that message
+
+    > They then infer the internal state just before emission of the MIC
+
+    > When the internal state is known at this point in time, the attacker can 
+    > simply reset their H to that internal state
+
+    > Then append arbitrary malicious data and compute a valid MIC
+    If I understand correctly, this is a new MIC, not one of the valid MICs we already know.
+
+    > Knowledge of the key is not necessary at all, yet valid forgeries can be 
+    > produced efficiently by the adversary
+
+    find a valid message that has the right length (length % 16 == 0)
+    -> we don't have one given in the exercise
+    reverse the last state before finalizing in the hash
+    -> we have a valid internal state and can continue to append our own whatever to it?
+    -> But the mic at the end should change, right?
+
+    (the exercise said the Key K has length 16, which is really handy, so i don't need to calculate for that.)
+    """
+    # find a valid message
+    target_pair = None
+    for msg, mic in valid_pairs:
+        print("%s has length %s" % (msg, len(msg)))
+        if len(msg) % 16 == 0:
+            # we have a message of the right length!
+            target_pair = (msg, mic)
+    if target_pair is None:
+        print("The given originals were not sufficient to perform an extension attack.\n"+
+              "We need a message, which has a length that is a multiple of 16 (Bytes).")
+        return
+    print("Found a fitting target pair: %s" % target_pair)
+
+def test_extension_attack():
+    """
+    Test the attack against a known key
+    """
+    # TODO
+    raise(NotImplementedError("Extension attack is still TODO"))
 
 def main():
     parser = argparse.ArgumentParser(prog="authur1 authentication hash", description='Implementation and attack for the custom authur1 hash. Don\'t actually use this hash!')
@@ -135,7 +195,7 @@ def main():
     parser.add_argument('-v', '--verbose', action="store_true",
                     help='print many things')
     parser.add_argument('-e', '--extension-attack', type=str,
-                        help='perform an extension attack, this option requires known mics in the form: "deadbeed,abababab,ecbadf,..."')
+                        help='perform an extension attack, this option requires known mics in the form: "msg1:deadbeed,msg2:abababab,msg3:ecbadf,..."')
     parser.add_argument('-a', '--auth', action="store_true",
                     help='generate a message integrity code (mic), needs a value to be hashed. If no key is specified, a random key will be generated.')
     args = parser.parse_args()
@@ -167,22 +227,23 @@ def main():
         exit()
     elif args.extension_attack:
         # TODO
-        hex_strs: list = args.extension_attack.split(",")
-        mics: list = []   # will store our processed given hashes
-        for mic in hex_strs:
+        original_strs: list = args.extension_attack.split(",")
+        # will store our processed given messages and mics as tuples of bytearrays
+        valid_pairs: list = []   
+        for pair in original_strs:
             try:
-                assert (len(mic) == 8), "given hash '%s' formatted incorrectly" % mic
+                (msg, mic) = pair.split(":")
+                assert (len(mic) == 8), "given mic '%s' formatted incorrectly" % mic
                 mic_int: int = int(mic, 16)
-                mics.append(bytearray(mic_int.to_bytes(4)))
-            except Exception:
-                print("given hash '%s' formatted incorrectly" % mic)
+                valid_pairs.append((bytearray(msg.encode()),bytearray(mic_int.to_bytes(4))))
+            except Exception as e:
+                print(e)
+                print("given pair '%s' formatted incorrectly" % pair)
                 exit(1)
 
-        # now attack authur1 with the given mics
-        # TODO extension attack
-        print("extension attack is still TODO")
-
+        extension_attack(valid_pairs)
         exit()
+
     parser.print_help()
 
 if __name__ == "__main__":
