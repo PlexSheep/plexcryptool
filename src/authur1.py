@@ -26,14 +26,22 @@ VALUE_SIZE = 4
 The rotations are tested agains a c implementation and are still garbage. FIXME
 """
 def rotl(value: int, count: int) -> int:
+    # FIXME
     mask: int = CHAR_BIT * VALUE_SIZE - 1;
+    print("mask length: %d" % mask.bit_length())
     count = count & mask
-    return (value << count) | (value >> (-count & mask));
+    result = (value << count) | (value >> (-count & mask));
+    assert result.bit_length() <= 32, "python made the numbers too big: %d bit" % result.bit_length()
+    return result
 
 def rotr(value: int, count: int) -> int:
+    # FIXME
     mask: int = CHAR_BIT * VALUE_SIZE - 1;
+    print("mask length: %d" % mask.bit_length())
     count = count & mask
-    return (value >> count) | (value << (-count & mask));
+    result = (value >> count) | (value << (-count & mask));
+    assert result.bit_length() <= 32, "python made the numbers too big: %d bit" % result.bit_length()
+    return result
 
 """
 Now for the actual implementation of authur1
