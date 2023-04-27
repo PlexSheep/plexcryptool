@@ -225,7 +225,7 @@ def test_extension_attack():
     """
     Test the attack against a known last state
     """
-    key = bytearray(0x13377331.to_bytes(16))
+    key = bytearray(0x133773310000.to_bytes(16))
     message = bytearray("1234".encode())
     ext_message = bytearray("EXT".encode())
     # we need to bruteforce this, skip for the test
@@ -235,7 +235,7 @@ def test_extension_attack():
     message.extend(ext_message)
     validated_mic = keyed_hash(message, key)
     assert validated_mic == forged_mic, "forged mic\n%sis not valid\n%s" % ( forged_mic.hex(), validated_mic.hex() )
-    print("Manual extension attack with known last internal state works\n(%s == %s)" % (forged_mic.hex(), validated_mic.hex()))
+    print("Manual extension attack with known last internal state works (%s == %s)" % (forged_mic.hex(), validated_mic.hex()))
     
 
 
