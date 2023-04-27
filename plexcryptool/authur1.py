@@ -41,11 +41,15 @@ def inner_authur1(input: int) -> int:
 
     return output
 
-def authur1(input: bytearray, verbose: bool = False) -> bytearray:
-    if verbose:
-        print("input: %s" % input)
+def authur1(input: bytearray, 
+            verbose: bool = False, 
+            first_state: bytearray = DEFINED_INITIAL, 
+            return_last_state: bool = False) -> bytearray:
     internal_buffer: bytearray = bytearray()
-    accumulator: bytearray = DEFINED_INITIAL
+    accumulator: bytearray = first_state
+    if verbose:
+        print("input: %s" % input.hex())
+        print("first internal state: %s" % accumulator.hex())
     for in_byte in input:
         if verbose:
             print("current in_byte: %s" % chr(in_byte))
@@ -85,38 +89,17 @@ def authur1(input: bytearray, verbose: bool = False) -> bytearray:
         print("last internal state: %s" % accumulator.hex())
     # now Q the accumulator and return
     # if input = "" this step breaks things, just remove it.
-    if len(input) != 0:
+    if len(input) != 0 and not return_last_state:
         accuint: int = int.from_bytes(accumulator)
         accuint: int = inner_authur1(accuint)
         accumulator: bytearray = bytearray(accuint.to_bytes(4))
     return accumulator
 
-def keyed_hash(message: bytearray, key: bytearray) -> bytearray:
+def keyed_hash(message: bytearray, key: bytearray, verbose: bool = False, return_last_state: bool = False) -> bytearray:
     assert len(key) == 16, "key is not 16 Byte long: %s" % len(key)
     # prepend only
     input: bytearray = key + message
-    mic: bytearray = authur1(input)
-    return mic
-
-def reverse_inner_authur1(output: int) -> int:
-    assert output.bit_length() <= 32, "output length is <= 32: %d" % output.bit_length()
-
-    # plexcryptool.binary uses u32 for shifting
-    #output: int = input ^ (binary.rotl32(input, SHIFT_LENGTH))
-    # -> output ^ input = binary.rotl32(input, SHIFT_LENGTH)
-    # -> input = binary.rotl32(input, SHIFT_LENGTH) ^ output
-    input: int = output ^ (binary.rotr32(output, SHIFT_LENGTH))
-
-    assert False, "inner_authur1 can not be reversed!"
-    assert input.bit_length() <= 32, "input length is <= 32: %d" % input.bit_length()
-
-    return input
-
-def find_last_internal_state(mic: bytearray) -> bytearray:
-    # reverse the mic to get the last internal state
-    # TODO
-    raise NotImplementedError("find last internal state is still TODO")
-
+    mic: bytearray = authur1(input, verbose, return_last_state=return_last_state)
     return mic
 
 def extension_attack(valid_pairs: list):
@@ -175,8 +158,37 @@ def extension_attack(valid_pairs: list):
         print("The given originals were not sufficient to perform an extension attack.\n"+
               "We need a message, which has a length that is a multiple of 16 (Bytes).")
         return
-    last_internal: bytearray = find_last_internal_state(target_pair[1])
-    print("Found a fitting target pair: (%s,%s)" % target_pair)
+
+    # now find the last internal state.
+    # inner_authur1 cannot be reversed, so we need to brute force it
+    # the key space is only 2**32, so it should be possible
+    # we need to check everyone of these 2**32 against the valid hashes to find a working one
+
+    found_the_state = False
+    KEY_SPACE = 2**32
+    extension_msg = bytearray("ef".encode())
+    # given mic for "abcdef" 0f6b8802
+    looking_for = bytearray(0x0f6b8802.to_bytes(4))
+    last_internal_state = None
+    print("=" * 120)
+    print("Bruteforcing the internal state, this might take a while")
+    print("=" * 120)
+    for i in range(0, KEY_SPACE):
+        mic = authur1(extension_msg, False, bytearray(i.to_bytes(4)))
+        if found_the_state:
+            break
+        if not mic is None and mic == looking_for:
+            print("=" * 120)
+            print("FOUND THE THING")
+            found_the_state = True
+            last_internal_state = i
+    print("IT IS %s" % hex(last_internal_state))
+
+    extension_text = "EXTENSION ATTACK"
+
+    hacked_mic = authur1(bytearray(extension_text.encode()), True, bytearray(last_internal_state.to_bytes(4)))
+    print("Hacked MIC: %s" % hacked_mic.hex())
+
 
 def test():
     init: int = int.from_bytes(DEFINED_INITIAL)
@@ -204,25 +216,28 @@ def test():
 
     print("H aka authur1 passed the test")
 
-    test_reverse_inner_authur1()
+    #test_reverse_inner_authur1()
     test_extension_attack()
 
     print("All tests passed!")
 
 def test_extension_attack():
     """
-    Test the attack against a known key
+    Test the attack against a known last state
     """
-    # TODO
-    raise(NotImplementedError("Extension attack is still TODO"))
+    key = bytearray(0x13377331.to_bytes(16))
+    message = bytearray("1234".encode())
+    ext_message = bytearray("EXT".encode())
+    # we need to bruteforce this, skip for the test
+    mic = keyed_hash(message, key)
+    last_internal_state = keyed_hash(message, key, return_last_state=True)
+    forged_mic = authur1(ext_message, False, last_internal_state)
+    message.extend(ext_message)
+    validated_mic = keyed_hash(message, key)
+    assert validated_mic == forged_mic, "forged mic\n%sis not valid\n%s" % ( forged_mic.hex(), validated_mic.hex() )
+    print("Manual extension attack with known last internal state works\n(%s == %s)" % (forged_mic.hex(), validated_mic.hex()))
+    
 
-def test_reverse_inner_authur1():
-    a = 0x1337
-    aq = inner_authur1(a)
-    assert reverse_inner_authur1(aq) == a, "reverse_inner_authur1 does not work:\n%s\nis not\n%s" % (
-            bin(a), 
-            bin(reverse_inner_authur1(a))
-            )
 
 def main():
     parser = argparse.ArgumentParser(prog="authur1", description='Implementation and attack for the custom authur1 hash. Don\'t actually use this hash!')
