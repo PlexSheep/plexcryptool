@@ -11,6 +11,8 @@ Since this (auth) hash did not have a name before, I gave it the name 'authur1'
 import argparse
 import random
 import sys
+import time
+from types import NoneType
 
 # FIXME make proper pyi Implementation for the rust part
 # only used for bit rotation
@@ -22,7 +24,7 @@ from plexcryptool import binary
 SHIFT_LENGTH = 17
 DEFINED_INITIAL = bytearray([0x52, 0x4f, 0x46, 0x4c])
 PADDING = 0xff
-EXT_TEST_STR = "EXTENSION ATTACK WORKS"
+EXT_TEST_STR: str = "ef"
 
 # constants for Circular shifting
 # constant value defined in limits.h, it's 8 (bit) on my machine, on yours probably too.
@@ -124,7 +126,7 @@ def keyed_hash(message: bytearray, key: bytearray, verbose: bool = False, return
     mic: bytearray = authur1(input, verbose, return_last_state=return_last_state)
     return mic
 
-def extension_attack(valid_pairs: list[tuple[bytearray, bytearray]]) -> tuple[bytearray,bytearray]:
+def extension_attack(valid_pairs: list[tuple[bytearray, bytearray]], extending_message: bytearray, last_internal_state: int | NoneType = None) -> tuple[bytearray,bytearray, bytearray]:
     """
     Extension attack against keyed hash of authur1
 
@@ -191,28 +193,36 @@ def extension_attack(valid_pairs: list[tuple[bytearray, bytearray]]) -> tuple[by
     # only the last block
     last_block = target_pair[0][-4:]
     extension_msg = last_block
+    full_msg = target_pair[0][:-4]
     # given mic for "abcdef" 0f6b8802
     looking_for = target_pair[1]
-    last_internal_state = 0
     print("=" * 120)
     print("extension_msg for bruteforce: %s" % extension_msg)
     print("looking for result: %s" % looking_for.hex())
     print("Bruteforcing the internal state, this might take a while")
     print("=" * 120)
-    for i in range(0, KEY_SPACE):
-        mic = authur1_optimized(extension_msg, bytearray(i.to_bytes(4)))
-        if i % 0x1000 == 0:
-            msg = "state %08x | hash %s | search %s" % (i, mic.hex(), looking_for.hex())
-            sys.stdout.write('%s\r' % msg)
-            sys.stdout.flush()
-        if mic == looking_for:
-            print("\n" + "=" * 120)
-            print("FOUND THE THING")
-            last_internal_state = i
-            break
+    starttime = time.time()
+    if last_internal_state is None:
+        for i in range(0, KEY_SPACE):
+            mic = authur1_optimized(extension_msg, bytearray(i.to_bytes(4)))
+            if i % 0x1000 == 0:
+                msg = "state %08x | hash %s | search %s | status %f%% | time %s" % (
+                        i, 
+                        mic.hex(), 
+                        looking_for.hex(), 
+                        i / KEY_SPACE,
+                        time.time() - starttime
+                        )
+                sys.stdout.write('%s\r' % msg)
+                sys.stdout.flush()
+            if mic == looking_for:
+                print("\n" + "=" * 120)
+                print("FOUND THE THING")
+                last_internal_state = i
+                break
     print("IT IS %08x" % last_internal_state)
     print("=" * 120)
-    forged_input: bytearray = bytearray(b'HELLO')
+    forged_input: bytearray = extending_message
     print("Trying to forge a mic for an extended version with input:\n%08x\n(%s)" % (
         int.from_bytes(forged_input),
         forged_input.decode(errors="replace")
@@ -221,7 +231,8 @@ def extension_attack(valid_pairs: list[tuple[bytearray, bytearray]]) -> tuple[by
 
     hacked_mic = authur1_optimized(forged_input, first_state=bytearray(last_internal_state.to_bytes(4)))
     print("Hacked MIC: %s" % hacked_mic.hex())
-    return (forged_input, hacked_mic)
+    full_msg.extend(forged_input)
+    return (forged_input, hacked_mic, full_msg)
 
 def test():
     init: int = int.from_bytes(DEFINED_INITIAL)
@@ -260,21 +271,27 @@ def test_extension_attack():
     """
     # this key produces a mic that is fast to bruteforce with my code
     # (in combination with "AAAAaa" as input ofc)
+    # test with these values, they are some of the first the brute force algo tries
+    #key = bytearray(0x289488ae6d71c82da1502c0130ec04e0.to_bytes(16))
+    #message = bytearray(b'AAAAaa')
     key = bytearray(0x289488ae6d71c82da1502c0130ec04e0.to_bytes(16))
     message = bytearray(b'AAAAaa')
     # we need to bruteforce this, skip for the test
-    mic = keyed_hash(message, key, True)
+    mic = keyed_hash(message, key, False)
     print("testing against mic: %s" % mic.hex())
     #last_internal_state = keyed_hash(message, key, return_last_state=True)
     forged_data = extension_attack([(message, mic)])
-    print("extension attack returned the following: %s,%s" % (forged_data[0].decode(errors="replace"), forged_data[1].hex()))
+    print("extension attack returned the following:\n%s\n%s" % (forged_data[0].decode(errors="replace"), forged_data[1].hex()))
     print("=" * 120)
     message = message[:4]
     message.extend(forged_data[0])
-    print("generating real mic for %x (%s)" % (int.from_bytes(message), message.decode(errors="replace")))
-    validated_mic = keyed_hash(message, key, True)
+    print("generating real mic for\n%x\n(%s)" % (int.from_bytes(message), message.decode(errors="replace")))
+    validated_mic = keyed_hash(message, key, False)
     assert validated_mic == forged_data[1], "forged mic %s is not valid. (%s)" % ( forged_data[1].hex(), validated_mic.hex() )
     print("Manual extension attack with known last internal state works (%s == %s)" % (forged_data[1].hex(), validated_mic.hex()))
+    print("=" * 120)
+    print("Forged a valid MIC for the following message:\n\n%s\n\nMIC: %s" % (message.decode(errors="replace"), validated_mic.hex()))
+    print("=" * 120)
     
 def main():
     parser = argparse.ArgumentParser(prog="authur1", description='Implementation and attack for the custom authur1 hash. Don\'t actually use this hash!')
@@ -288,6 +305,10 @@ def main():
                     help='print many things')
     parser.add_argument('-e', '--extension-attack', metavar="ORIGINALS", type=str,
                         help='perform an extension attack, this option requires known mics in the form: "msg1:deadbeed,msg2:abababab,msg3:ecbadf,..."')
+    parser.add_argument('-s', '--last-state-attack', metavar="HEX", type=str,
+                        help='don\'t bruteforce the internal state and use a given one.')
+    parser.add_argument('-m', '--ext-message', metavar="MSG", type=str,
+                        help='the message that is appended to the valid one')
     parser.add_argument('-a', '--auth', action="store_true",
                     help='generate a message integrity code (mic), needs a value to be hashed. If no key is specified, a random key will be generated.')
     args = parser.parse_args()
@@ -317,8 +338,8 @@ def main():
         hashed: bytearray = authur1(my_bytes, args.verbose)
         print("hash for \"%s\" is:\n%s" % (args.hash, hashed.hex()))
         exit()
-    elif args.extension_attack:
-        # TODO
+    elif args.extension_attack and args.ext_message:
+        msg_bytes = bytearray(args.ext_message.encode())
         original_strs: list = args.extension_attack.split(",")
         # will store our processed given messages and mics as tuples of bytearrays
         valid_pairs: list = []   
@@ -333,7 +354,17 @@ def main():
                 print("given pair '%s' formatted incorrectly" % pair)
                 exit(1)
 
-        extension_attack(valid_pairs)
+        if args.last_state_attack:
+            state = int(args.last_state_attack, 16)
+            forged_data = extension_attack(valid_pairs, msg_bytes, state)
+
+        else:
+            forged_data = extension_attack(valid_pairs, msg_bytes)
+        print("Forged a valid delta:")
+        print("=" * 20 + "BEGIN FORGED AUTHENTICATED TEXT" + "=" * 20)
+        print(forged_data[2].decode())
+        print("=" * 20 + "END FORGED AUTHENTICATED TEXT" + "=" * 22)
+        print("MIC: %s" % forged_data[1].hex())
         exit()
 
     parser.print_help()
