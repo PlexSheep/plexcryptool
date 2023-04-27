@@ -82,7 +82,7 @@ def authur1(input: bytearray, verbose: bool = False) -> bytearray:
 
     assert len(accumulator) == 4, "accumulator too long: %d bytes" % len(accumulator)
     if verbose:
-        print("returning state: %s" % accumulator.hex())
+        print("last internal state: %s" % accumulator.hex())
     # now Q the accumulator and return
     # if input = "" this step breaks things, just remove it.
     if len(input) != 0:
@@ -91,40 +91,32 @@ def authur1(input: bytearray, verbose: bool = False) -> bytearray:
         accumulator: bytearray = bytearray(accuint.to_bytes(4))
     return accumulator
 
-def test():
-    init: int = int.from_bytes(DEFINED_INITIAL)
-    a: int = inner_authur1(init)
-    b: int = inner_authur1(a)
-    c: int = inner_authur1(b)
-    assert a == 0xded7e2d2, "Q(S0) returns wrong value: %s" % hex(a)
-    assert b == 0x1b725f7d, "Q(Q(S0)) returns wrong value: %s" % hex(b)
-    assert c == 0xa5886999, "Q(Q(Q(S0))) returns wrong value: %s" % hex(c)
-
-    print("Q aka inner_authur1 passed the test")
-
-    ha: bytearray = authur1(bytearray(0))
-    hb: bytearray = authur1(bytearray(b'A'))
-    hc: bytearray = authur1(bytearray(b'AB'))
-    hd: bytearray = authur1(bytearray(b'ABC'))
-    he: bytearray = authur1(bytearray(b'ABCD'))
-    hf: bytearray = authur1(bytearray(b'ABCDE'))
-    assert int.from_bytes(ha) == 0xded7e2d2, "H(\"\") returns wrong value: %s" % ha.hex()
-    assert int.from_bytes(hb) == 0x5d725f7f, "H(\"A\") returns wrong value: %s" % hb.hex()
-    assert int.from_bytes(hc) == 0x5f3b5f7f, "H(\"AB\") returns wrong value: %s" % hc.hex()
-    assert int.from_bytes(hd) == 0x5f39137f, "H(\"ABC\") returns wrong value: %s" % hd.hex()
-    assert int.from_bytes(he) == 0x5f391128, "H(\"ABCD\") returns wrong value: %s" % he.hex()
-    assert int.from_bytes(hf) == 0x2f69af58, "H(\"ABCDE\") returns wrong value: %s" % hf.hex()
-
-    print("H aka authur1 passed the test")
-
-    test_extension_attack()
-
-    print("All tests passed!")
-
 def keyed_hash(message: bytearray, key: bytearray) -> bytearray:
     assert len(key) == 16, "key is not 16 Byte long: %s" % len(key)
+    # prepend only
     input: bytearray = key + message
     mic: bytearray = authur1(input)
+    return mic
+
+def reverse_inner_authur1(output: int) -> int:
+    assert output.bit_length() <= 32, "output length is <= 32: %d" % output.bit_length()
+
+    # plexcryptool.binary uses u32 for shifting
+    #output: int = input ^ (binary.rotl32(input, SHIFT_LENGTH))
+    # -> output ^ input = binary.rotl32(input, SHIFT_LENGTH)
+    # -> input = binary.rotl32(input, SHIFT_LENGTH) ^ output
+    input: int = output ^ (binary.rotr32(output, SHIFT_LENGTH))
+
+    assert False, "inner_authur1 can not be reversed!"
+    assert input.bit_length() <= 32, "input length is <= 32: %d" % input.bit_length()
+
+    return input
+
+def find_last_internal_state(mic: bytearray) -> bytearray:
+    # reverse the mic to get the last internal state
+    # TODO
+    raise NotImplementedError("find last internal state is still TODO")
+
     return mic
 
 def extension_attack(valid_pairs: list):
@@ -156,26 +148,66 @@ def extension_attack(valid_pairs: list):
     > Knowledge of the key is not necessary at all, yet valid forgeries can be 
     > produced efficiently by the adversary
 
-    find a valid message that has the right length (length % 16 == 0)
+    use any convenient message that has low length?
+    fill it with padding?
+    -> internal block length is 4 byte
     -> we don't have one given in the exercise
     reverse the last state before finalizing in the hash
     -> we have a valid internal state and can continue to append our own whatever to it?
     -> But the mic at the end should change, right?
 
     (the exercise said the Key K has length 16, which is really handy, so i don't need to calculate for that.)
+    (16 % 4 is 0)
     """
     # find a valid message
     target_pair = None
     for msg, mic in valid_pairs:
         print("%s has length %s" % (msg, len(msg)))
-        if len(msg) % 16 == 0:
+        if len(msg) % 4 == 0:
             # we have a message of the right length!
+            target_pair = (msg, mic)
+        else:
+            # for now, just use the first one?
+            while len(msg) % 4 != 0:
+                msg.append(PADDING)
             target_pair = (msg, mic)
     if target_pair is None:
         print("The given originals were not sufficient to perform an extension attack.\n"+
               "We need a message, which has a length that is a multiple of 16 (Bytes).")
         return
-    print("Found a fitting target pair: %s" % target_pair)
+    last_internal: bytearray = find_last_internal_state(target_pair[1])
+    print("Found a fitting target pair: (%s,%s)" % target_pair)
+
+def test():
+    init: int = int.from_bytes(DEFINED_INITIAL)
+    a: int = inner_authur1(init)
+    b: int = inner_authur1(a)
+    c: int = inner_authur1(b)
+    assert a == 0xded7e2d2, "Q(S0) returns wrong value: %s" % hex(a)
+    assert b == 0x1b725f7d, "Q(Q(S0)) returns wrong value: %s" % hex(b)
+    assert c == 0xa5886999, "Q(Q(Q(S0))) returns wrong value: %s" % hex(c)
+
+    print("Q aka inner_authur1 passed the test")
+
+    ha: bytearray = authur1(bytearray(0))
+    hb: bytearray = authur1(bytearray(b'A'))
+    hc: bytearray = authur1(bytearray(b'AB'))
+    hd: bytearray = authur1(bytearray(b'ABC'))
+    he: bytearray = authur1(bytearray(b'ABCD'))
+    hf: bytearray = authur1(bytearray(b'ABCDE'))
+    assert int.from_bytes(ha) == 0xded7e2d2, "H(\"\") returns wrong value: %s" % ha.hex()
+    assert int.from_bytes(hb) == 0x5d725f7f, "H(\"A\") returns wrong value: %s" % hb.hex()
+    assert int.from_bytes(hc) == 0x5f3b5f7f, "H(\"AB\") returns wrong value: %s" % hc.hex()
+    assert int.from_bytes(hd) == 0x5f39137f, "H(\"ABC\") returns wrong value: %s" % hd.hex()
+    assert int.from_bytes(he) == 0x5f391128, "H(\"ABCD\") returns wrong value: %s" % he.hex()
+    assert int.from_bytes(hf) == 0x2f69af58, "H(\"ABCDE\") returns wrong value: %s" % hf.hex()
+
+    print("H aka authur1 passed the test")
+
+    test_reverse_inner_authur1()
+    test_extension_attack()
+
+    print("All tests passed!")
 
 def test_extension_attack():
     """
@@ -184,9 +216,17 @@ def test_extension_attack():
     # TODO
     raise(NotImplementedError("Extension attack is still TODO"))
 
+def test_reverse_inner_authur1():
+    a = 0x1337
+    aq = inner_authur1(a)
+    assert reverse_inner_authur1(aq) == a, "reverse_inner_authur1 does not work:\n%s\nis not\n%s" % (
+            bin(a), 
+            bin(reverse_inner_authur1(a))
+            )
+
 def main():
-    parser = argparse.ArgumentParser(prog="authur1 authentication hash", description='Implementation and attack for the custom authur1 hash. Don\'t actually use this hash!')
-    parser.add_argument('-i', '--hash', type=str,
+    parser = argparse.ArgumentParser(prog="authur1", description='Implementation and attack for the custom authur1 hash. Don\'t actually use this hash!')
+    parser.add_argument('-i', '--hash', type=str, metavar="MSG",
                     help='an input that should be hashed')
     parser.add_argument('-k', '--key', type=str,
                     help='an key that should be used with auth mode')
@@ -194,7 +234,7 @@ def main():
                     help='perform tests')
     parser.add_argument('-v', '--verbose', action="store_true",
                     help='print many things')
-    parser.add_argument('-e', '--extension-attack', type=str,
+    parser.add_argument('-e', '--extension-attack', metavar="ORIGINALS", type=str,
                         help='perform an extension attack, this option requires known mics in the form: "msg1:deadbeed,msg2:abababab,msg3:ecbadf,..."')
     parser.add_argument('-a', '--auth', action="store_true",
                     help='generate a message integrity code (mic), needs a value to be hashed. If no key is specified, a random key will be generated.')
