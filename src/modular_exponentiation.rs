@@ -1,6 +1,11 @@
 #![allow(dead_code)]
 
-use num_bigint::BigInt; 
+use num_bigint::BigInt;
+use num_traits::ToPrimitive;
+use num_traits::FromPrimitive;
+use pyo3::exceptions::PyException;
+use pyo3::exceptions::PyValueError;
+use pyo3::prelude::*;
 
 /// works, but is forbidden for class
 pub fn calc_exp_in_field_lib(
@@ -41,6 +46,28 @@ pub fn modular_exponentiation(
     }
 
     return exp;
+}
+
+#[pyfunction]
+pub fn py_modular_exponentiation(
+    base: i128,
+    orig_exp: i128, 
+    field: i128) -> PyResult<u128> {
+    let big_res = modular_exponentiation(
+        BigInt::from(base), 
+        BigInt::from(orig_exp), 
+        BigInt::from(field)
+        );
+    let res = big_res.to_u128();
+    match res {
+        Some(v) => {
+            return Ok(v);
+        }
+        None => {
+            return Err(PyValueError::new_err("result is too big!"));
+        }
+    }
+
 }
 
 // Vec<u8> to Vec<bool> ( binary representation interpreted otherwise )

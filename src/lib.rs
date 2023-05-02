@@ -15,6 +15,7 @@ fn register_binary_module(py: Python, parent_module: &PyModule) -> PyResult<()> 
 #[pymodule]
 fn register_math_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let math_module = PyModule::new(py, "math")?;
+    math_module.add_function(wrap_pyfunction!(modular_exponentiation::py_modular_exponentiation, math_module)?)?;
     parent_module.add_submodule(math_module)?;
     Ok(())
 }
