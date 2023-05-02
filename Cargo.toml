@@ -7,6 +7,12 @@ edition = "2021"
 [lib]
 name = "plexcryptool"
 crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[[bin]]
+name = "plexcryptool"
+path = "src/main.rs"
 
 [dependencies]
+num-bigint = "0.4.3"
 pyo3 = "0.18.1"

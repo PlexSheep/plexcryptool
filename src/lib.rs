@@ -1,6 +1,7 @@
 use pyo3::prelude::*;
 
 mod binary;
+mod iterated_squaring;
 
 #[pymodule]
 fn register_binary_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
