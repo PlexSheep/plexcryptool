@@ -1,6 +1,6 @@
-use std::{str::FromStr, array};
+#![allow(dead_code)]
 
-use num_bigint::{BigInt, BigUint}; 
+use num_bigint::BigInt; 
 
 /// works, but is forbidden for class
 pub fn calc_exp_in_field_lib(
@@ -55,7 +55,6 @@ fn bytes_to_bools(bytes: &Vec<u8>) -> Vec<bool> {
 }
 
 fn dump_bin(bytes: &Vec<u8>) {
-    let mut total: Vec<u8> = Vec::new();
     for byte in bytes.iter() {
         println!("{:#08b}\t| {:#02x}", byte, byte);
     }

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 /**
  * Pythons bit operations are trash, so I made a rust lib for that.
  */
