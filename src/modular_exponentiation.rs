@@ -11,6 +11,8 @@ pub fn calc_exp_in_field_lib(
 }
 
 /**
+ *  modular exponentiation algorithm with big numbers.
+ *
  *  Umwandlung des Exponenten k in die zugehörige Binärdarstellung.
  *  Ersetzen jeder 0 durch Q und jeder 1 durch QM.
  *  Nun wird Q als Anweisung zum Quadrieren und M als Anweisung zum Multiplizieren aufgefasst.
@@ -18,20 +20,30 @@ pub fn calc_exp_in_field_lib(
  *  Man beginne mit 1, quadriere für jedes gelesene Q das bisherige Zwischenergebnis und 
  *  multipliziere es für jedes gelesene M mit x .
  */
-pub fn calc_exp_in_field(
+pub fn modular_exponentiation(
     base: BigInt,
-    exp: BigInt, 
+    orig_exp: BigInt, 
     field: BigInt) -> BigInt {
-    let binary_repr = exp.to_bytes_be();
-    dump_bin(&binary_repr.1);
-
+    let binary_repr = orig_exp.to_bytes_be();
 
     let instructions: Vec<bool> = bytes_to_bools(&binary_repr.1);
-    dbg!(instructions);
 
-    return base;
+    let mut exp = BigInt::from(1);
+    for instr in instructions {
+        if instr {
+            // square
+            exp = (exp.pow(2) * &base) % &field;
+        }
+        else {
+            // square and multiply
+            exp = exp.pow(2) % &field;
+        }
+    }
+
+    return exp;
 }
 
+// Vec<u8> to Vec<bool> ( binary representation interpreted otherwise )
 fn bytes_to_bools(bytes: &Vec<u8>) -> Vec<bool> {
     let mut result: Vec<bool> = Vec::new();
     for byte in bytes {

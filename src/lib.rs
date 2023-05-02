@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 
 mod binary;
-mod iterated_squaring;
+mod modular_exponentiation;
 
 #[pymodule]
 fn register_binary_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
@@ -12,9 +12,17 @@ fn register_binary_module(py: Python, parent_module: &PyModule) -> PyResult<()> 
     Ok(())
 }
 
+#[pymodule]
+fn register_math_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
+    let math_module = PyModule::new(py, "math")?;
+    parent_module.add_submodule(math_module)?;
+    Ok(())
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn plexcryptool(py: Python, m: &PyModule) -> PyResult<()> {
     register_binary_module(py, m)?;
+    register_math_module(py, m)?;
     Ok(())
 }
