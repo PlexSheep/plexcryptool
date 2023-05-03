@@ -1,14 +1,14 @@
 mod binary;
 mod modular_exponentiation;
 
-use std::{str::{FromStr, Matches}, fmt::Debug};
+use std::{str::FromStr, fmt::Debug};
 
 use modular_exponentiation::modular_exponentiation;
 
-use clap::{Args, Parser, Subcommand, ValueEnum};
+use clap::{Args, Parser, Subcommand};
 use num_bigint;
-
-
+/*************************************************************************************************/
+// This is just structures for parsing Cli args
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
@@ -25,7 +25,8 @@ struct Cli {
 enum Commands {
     /// Use math functions
     Math(MathCommand),
-    Binary
+    /// Use binary functions
+    Binary(BinaryCommand)
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
@@ -34,39 +35,78 @@ struct MathCommand {
     action: MathActions
 }
 
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+struct BinaryCommand {
+    #[command(subcommand)]
+    action: BinaryActions
+}
+
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
 enum MathActions {
     #[command(name="modexp")]
-    ModExp(ModExpArgs),
+    Modexp(ModexpArgs),
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
-struct ModExpArgs {
-    Base: String,
-    Exp: String,
-    Field: String
+struct ModexpArgs {
+    base: String,
+    exp: String,
+    field: String
 }
 
+#[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
+enum BinaryActions {
+    /// bit rotation/circular shifting (only 32bit)
+    #[command(name="rotate")]
+    Rotate(RotateArgs),
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+struct RotateArgs {
+    #[arg(short, long, default_value_t = false)]
+    left: bool,
+    base: u32,
+    shift_width: u32,
+}
+
+/*************************************************************************************************/
 pub fn main() {
     let args = Cli::parse();
     match args.command {
         Commands::Math(action) => {
             match action.action {
-                MathActions::ModExp(mod_exp_args) => {
-                    let b = num_bigint::BigInt::from_str(&mod_exp_args.Base.as_str()).expect("a");
-                    let e = num_bigint::BigInt::from_str(&mod_exp_args.Exp.as_str()).expect("a");
-                    let f = num_bigint::BigInt::from_str(&mod_exp_args.Field.as_str()).expect("a");
-                    let r = modular_exponentiation(b.clone(), e, f);
+                MathActions::Modexp(mod_exp_args) => {
+                    let b = num_bigint::BigInt::from_str(&mod_exp_args.base.as_str()).expect("a");
+                    let e = num_bigint::BigInt::from_str(&mod_exp_args.exp.as_str()).expect("a");
+                    let f = num_bigint::BigInt::from_str(&mod_exp_args.field.as_str()).expect("a");
+                    let result = modular_exponentiation(b.clone(), e, f);
                     if args.machine {
-                        print!("{}\n", r)
+                        println!("{}", result)
                     }
                     else {
-                        print!("res is {}\n", r)
+                        println!("result is {}", result)
                     }
                 }
             }
         }
-        Commands::Binary => {
+        Commands::Binary(action) => {
+            match action.action {
+                BinaryActions::Rotate(bin_rot_args) => {
+                    let result: u32;
+                    if bin_rot_args.left {
+                        result = binary::rotl32(bin_rot_args.base, bin_rot_args.shift_width);
+                    }
+                    else {
+                        result = binary::rotl32(bin_rot_args.base, bin_rot_args.shift_width);
+                    }
+                    if args.machine {
+                        println!("{}", result)
+                    }
+                    else {
+                        println!("result is {}", result)
+                    }
+                }
+            }
             
         }
 
