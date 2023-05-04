@@ -93,11 +93,12 @@ pub fn main() {
             match action.action {
                 BinaryActions::Rotate(bin_rot_args) => {
                     let result: u32;
+                    dbg!(&bin_rot_args.left);
                     if bin_rot_args.left {
                         result = binary::rotl32(bin_rot_args.base, bin_rot_args.shift_width);
                     }
                     else {
-                        result = binary::rotl32(bin_rot_args.base, bin_rot_args.shift_width);
+                        result = binary::rotr32(bin_rot_args.base, bin_rot_args.shift_width);
                     }
                     if args.machine {
                         println!("{}", result)
@@ -110,7 +111,7 @@ pub fn main() {
             
         }
 
-
+        // Fallback, this should ideally not execute
         _ => {
             eprintln!("Command not implemented.\n");
         }
