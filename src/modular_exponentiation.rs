@@ -24,35 +24,36 @@ pub fn modular_exponentiation(
     if verbose {
         println!("args:\nbase {base}\nexp {exp}\nfield {field}\nverbose {verbose}");
     }
-    let mut instructions: Vec<bool> = bigint_to_bools(exp);
+    let mut instructions: Vec<bool> = bigint_to_bools(exp.clone());
     // remove the signing bit
-    if verbose {
-        println!("pre instructions {:?}",instructions);
-    }
 
     instructions.reverse();
+
     if verbose {
-        println!("instructions {:?}",instructions);
+        println!("exponent to binary/bools (discard first bit):\n{:b}\n{:?}", exp, instructions);
     }
 
     let mut res = base.clone();
-    for instr in instructions {
-        if verbose {
-            println!("current res: {res}");
-        }
+    for (index, instr) in instructions.iter().enumerate() {
         if !instr {
             // square
             if verbose {
-                println!("square");
+                print!("{index}. {instr} -> square:\nres = {res}^2 mod {field} = ");
             }
             res = res.pow(2) % &field;
+            if verbose {
+                println!("{res}");
+            }
         }
         else {
             // square and multiply
             if verbose {
-                println!("square and multiply");
+                print!("{index}. {instr} -> square and multiply:\nres = {res}^2 * {base} mod {field} = ");
             }
             res = (res.pow(2) * &base) % &field;
+            if verbose {
+                println!("{res}");
+            }
         }
     }
 
