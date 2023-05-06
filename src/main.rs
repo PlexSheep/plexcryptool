@@ -76,9 +76,9 @@ pub fn main() {
         Commands::Math(action) => {
             match action.action {
                 MathActions::Modexp(mod_exp_args) => {
-                    let b = num_bigint::BigInt::from_str(&mod_exp_args.base.as_str()).expect("a");
-                    let e = num_bigint::BigInt::from_str(&mod_exp_args.exp.as_str()).expect("a");
-                    let f = num_bigint::BigInt::from_str(&mod_exp_args.field.as_str()).expect("a");
+                    let b = num_bigint::BigInt::from_str(&mod_exp_args.base.as_str()).expect("could not make bigint");
+                    let e = num_bigint::BigInt::from_str(&mod_exp_args.exp.as_str()).expect("could not make bigint");
+                    let f = num_bigint::BigInt::from_str(&mod_exp_args.field.as_str()).expect("could not make bigint");
                     let result = modular_exponentiation(b.clone(), e, f);
                     if args.machine {
                         println!("{}", result)
@@ -93,7 +93,6 @@ pub fn main() {
             match action.action {
                 BinaryActions::Rotate(bin_rot_args) => {
                     let result: u32;
-                    dbg!(&bin_rot_args.left);
                     if bin_rot_args.left {
                         result = binary::rotl32(bin_rot_args.base, bin_rot_args.shift_width);
                     }
@@ -117,4 +116,3 @@ pub fn main() {
         }
     }
 }
-
