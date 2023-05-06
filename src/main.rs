@@ -19,6 +19,10 @@ struct Cli {
     /// Machine output
     #[arg(short, long, default_value_t = false, global = true)]
     machine: bool,
+
+    /// Verbose output
+    #[arg(short, long, default_value_t = false, global = true)]
+    verbose: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -79,7 +83,7 @@ pub fn main() {
                     let b = num_bigint::BigInt::from_str(&mod_exp_args.base.as_str()).expect("could not make bigint");
                     let e = num_bigint::BigInt::from_str(&mod_exp_args.exp.as_str()).expect("could not make bigint");
                     let f = num_bigint::BigInt::from_str(&mod_exp_args.field.as_str()).expect("could not make bigint");
-                    let result = modular_exponentiation(b.clone(), e, f);
+                    let result = modular_exponentiation(b.clone(), e, f, args.verbose);
                     if args.machine {
                         println!("{}", result)
                     }
