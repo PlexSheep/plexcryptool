@@ -16,6 +16,7 @@ It boils down to the following steps:
 - Create a virtual environment in the root of the repository. I used `python -m venv .venv` for this. Activate the venv.
 - Install maturin `pip install maturin --user`
 - compile the plexcryptool python module using `maturin develop -r` or `maturin build --release`
+- install the module with pip: `pip install target/wheels/plexcryptool-X.X.X-cp311-cp311-manylinux_2_34_x86_64.whl`
 - compile the plexcryptool executable using `cargo run --release` or install it to your system with `cargo install --path  .`
 
 Thats it!

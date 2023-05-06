@@ -49,6 +49,7 @@ pub fn modular_exponentiation(
 }
 
 #[pyfunction]
+#[pyo3(name="modular_exponentiation")]
 pub fn py_modular_exponentiation(
     base: i128,
     orig_exp: i128, 
