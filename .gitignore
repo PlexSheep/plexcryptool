@@ -70,3 +70,5 @@ docs/_build/
 
 # Pyenv
 .python-version
+plexcryptool/authur1-findings.txt
+plexcryptool/authurl-values-attack.sh
