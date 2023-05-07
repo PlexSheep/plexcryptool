@@ -1,6 +1,14 @@
 #![allow(dead_code)]
+/// modular exponentiaton
+///
+/// Implements fast exponentiation with applied modulo. Usefull for calculations in a gallois
+/// field.
+///
+/// Author:     Christoph J. Scherr <software@cscherr.de>
+/// License:    MIT
+/// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 
-use num_bigint::{BigInt, BigUint};
+use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;

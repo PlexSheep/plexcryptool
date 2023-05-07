@@ -1,9 +1,21 @@
+#![warn(missing_docs)]
+#![warn(clippy::missing_docs_in_private_items)]
+//!
+//! This is a mixed rust/python library that also offers an executable.
+//! The intended usage is the solving of tasks for cryptology and maybe math, in the context of a
+//! # various tools for use in cryptology contexts
+//! university degree. I wrote this for cryptology at DHBW Mannheim.
+//!
+//! ___
+//! Author:     Christoph J. Scherr <software@cscherr.de>
+//!
+//! License:    MIT
+//!
+//! Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 mod binary;
-mod modular_exponentiation;
+mod math;
 
 use std::{str::FromStr, fmt::Debug};
-
-use modular_exponentiation::modular_exponentiation;
 
 use clap::{Args, Parser, Subcommand};
 use num_bigint;
@@ -74,6 +86,10 @@ struct RotateArgs {
 }
 
 /*************************************************************************************************/
+/// main function of plexcryptool.
+///
+/// This function is the entrypoint of the binary. It parses Commandline options and calls the
+/// internal functions with the corresponding values, then shows the results to the user.
 pub fn main() {
     let args = Cli::parse();
     match args.command {
@@ -83,7 +99,7 @@ pub fn main() {
                     let b = num_bigint::BigInt::from_str(&mod_exp_args.base.as_str()).expect("could not make bigint");
                     let e = num_bigint::BigInt::from_str(&mod_exp_args.exp.as_str()).expect("could not make bigint");
                     let f = num_bigint::BigInt::from_str(&mod_exp_args.field.as_str()).expect("could not make bigint");
-                    let result = modular_exponentiation(b.clone(), e, f, args.verbose);
+                    let result = math::modexp::modular_exponentiation(b.clone(), e, f, args.verbose);
                     if args.machine {
                         println!("{}", result)
                     }
@@ -112,11 +128,6 @@ pub fn main() {
                 }
             }
             
-        }
-
-        // Fallback, this should ideally not execute
-        _ => {
-            eprintln!("Command not implemented.\n");
         }
     }
 }

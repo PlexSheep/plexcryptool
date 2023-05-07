@@ -1,7 +1,21 @@
+#![warn(missing_docs)]
+#![warn(clippy::missing_docs_in_private_items)]
+//! # various tools for use in cryptology contexts
+//!
+//! This is a mixed rust/python library that also offers an executable.
+//! The intended usage is the solving of tasks for cryptology and maybe math, in the context of a
+//! university degree. I wrote this for cryptology at DHBW Mannheim.
+//!
+//! ___
+//! Author:     Christoph J. Scherr <software@cscherr.de>
+//!
+//! License:    MIT
+//!
+//! Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 use pyo3::prelude::*;
 
 mod binary;
-mod modular_exponentiation;
+mod math;
 
 #[pymodule]
 fn register_binary_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
@@ -15,7 +29,7 @@ fn register_binary_module(py: Python, parent_module: &PyModule) -> PyResult<()> 
 #[pymodule]
 fn register_math_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let math_module = PyModule::new(py, "math")?;
-    math_module.add_function(wrap_pyfunction!(modular_exponentiation::py_modular_exponentiation, math_module)?)?;
+    math_module.add_function(wrap_pyfunction!(math::modexp::py_modular_exponentiation, math_module)?)?;
     parent_module.add_submodule(math_module)?;
     Ok(())
 }
