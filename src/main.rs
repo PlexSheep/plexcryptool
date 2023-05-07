@@ -6,6 +6,12 @@
 //! # various tools for use in cryptology contexts
 //! university degree. I wrote this for cryptology at DHBW Mannheim.
 //!
+//! ## main function
+//! This project contains an executable, see [main.rs](main.rs)
+//!
+//! ## lib module
+//! This project contains is a library, see [lib.rs](lib.rs).
+//! Note that this library offers Python bindings using [PyO3](pyo3.rs)
 //! ___
 //! Author:     Christoph J. Scherr <software@cscherr.de>
 //!

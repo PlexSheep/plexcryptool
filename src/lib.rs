@@ -1,11 +1,17 @@
 #![warn(missing_docs)]
 #![warn(clippy::missing_docs_in_private_items)]
-//! # various tools for use in cryptology contexts
 //!
 //! This is a mixed rust/python library that also offers an executable.
 //! The intended usage is the solving of tasks for cryptology and maybe math, in the context of a
+//! # various tools for use in cryptology contexts
 //! university degree. I wrote this for cryptology at DHBW Mannheim.
 //!
+//! ## main function
+//! This project contains an executable, see [main.rs](main.rs)
+//!
+//! ## lib module
+//! This project contains is a library, see [lib.rs](lib.rs).
+//! Note that this library offers Python bindings using [PyO3](pyo3.rs)
 //! ___
 //! Author:     Christoph J. Scherr <software@cscherr.de>
 //!

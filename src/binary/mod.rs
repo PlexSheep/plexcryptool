@@ -1,8 +1,8 @@
-#![allow(dead_code)]
-/// binary functions
+/// # binary module
 ///
 /// This module contains some functions that manipulate binary values.
 ///
+/// ___
 /// Author:     Christoph J. Scherr <software@cscherr.de>
 /// License:    MIT
 /// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
