@@ -81,6 +81,7 @@ enum BinaryActions {
     /// bit rotation/circular shifting (only 32bit)
     #[command(name="rotate")]
     Rotate(RotateArgs),
+    Xor(XorArgs)
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
@@ -89,6 +90,12 @@ struct RotateArgs {
     left: bool,
     base: u32,
     shift_width: u32,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+struct XorArgs {
+    a: u128,
+    b: u128,
 }
 
 /*************************************************************************************************/
@@ -125,6 +132,15 @@ pub fn main() {
                     else {
                         result = binary::rotr32(bin_rot_args.base, bin_rot_args.shift_width);
                     }
+                    if args.machine {
+                        println!("{}", result)
+                    }
+                    else {
+                        println!("result is {}", result)
+                    }
+                },
+                BinaryActions::Xor(bin_xor_args) => {
+                    let result: u128 = binary::xor(bin_xor_args.a, bin_xor_args.b);
                     if args.machine {
                         println!("{}", result)
                     }

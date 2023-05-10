@@ -21,3 +21,8 @@ pub fn rotl32 (value: u32, count: u32) -> u32 {
 pub fn rotr32 (value: u32, count: u32) -> u32 {
     value.rotate_right(count as u32)
 }
+
+#[pyfunction]
+pub fn xor(a: u128, b: u128) -> u128 {
+    a | b
+}
