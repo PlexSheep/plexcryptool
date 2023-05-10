@@ -22,6 +22,7 @@ use pyo3::prelude::*;
 
 mod binary;
 mod math;
+mod algo;
 
 #[pymodule]
 fn register_binary_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
@@ -38,6 +39,17 @@ fn register_math_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let math_module = PyModule::new(py, "math")?;
     math_module.add_function(wrap_pyfunction!(math::modexp::py_modular_exponentiation, math_module)?)?;
     parent_module.add_submodule(math_module)?;
+    Ok(())
+}
+
+#[pymodule]
+fn register_algo_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
+    let algo_module = PyModule::new(py, "algo")?;
+    algo_module.add_function(wrap_pyfunction!(algo::feistel0::encrypt, algo_module)?)?;
+    algo_module.add_function(wrap_pyfunction!(algo::feistel0::decrypt, algo_module)?)?;
+    algo_module.add_function(wrap_pyfunction!(algo::feistel0::sbox, algo_module)?)?;
+    algo_module.add_function(wrap_pyfunction!(algo::feistel0::key_scheduler, algo_module)?)?;
+    parent_module.add_submodule(algo_module)?;
     Ok(())
 }
 

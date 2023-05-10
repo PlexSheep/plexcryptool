@@ -8,6 +8,8 @@
 /// License:    MIT
 /// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 
+use pyo3::prelude::*;
+
 const SBOX: [u8; 0x10] = [0x4, 3, 9, 0xa, 0xb, 2, 0xe, 1, 0xd, 0xc, 8, 6, 7, 5, 0, 0xf];
 const ROUNDS: u8 = 3;
 
@@ -20,6 +22,7 @@ fn test_inner() {
     assert!(inner(0x9876, 0xfedc, false) == 0x93c5);
 }
 
+#[pyfunction]
 pub fn inner(input: u16, key: u16, verbose: bool) -> u16 {
     // cut into u8 blocks
     let mut blocks: [u8; 4] = [
@@ -85,6 +88,7 @@ pub fn inner(input: u16, key: u16, verbose: bool) -> u16 {
     return result ^ key
 }
 
+#[pyfunction]
 /// Boilerplate KSA, returns the same given values everytime.
 pub fn key_scheduler(_key: u32) -> Vec<u16> {
     return vec![0xdead, 0xc0ff, 0xee5a]
@@ -96,6 +100,7 @@ fn test_encrypt() {
     assert_eq!(encrypt(0x12345678, vec![0x1aa2, 0x2bb3, 0x3cc4], true), 0x4313e07a);
 }
 
+#[pyfunction]
 /// encrypt a block
 pub fn encrypt(plaintext: u32, keys: Vec<u16>, verbose: bool) -> u32 {
     assert_eq!(keys.len(), ROUNDS as usize);
@@ -133,6 +138,7 @@ fn test_decrypt() {
     assert_eq!(plaintext, deciphertext);
 }
 
+#[pyfunction]
 /// decrypt a given plaintext with a given key vec
 pub fn decrypt(ciphertext: u32, mut keys: Vec<u16>, verbose: bool) -> u32 {
     assert_eq!(keys.len(), ROUNDS as usize);
@@ -175,6 +181,7 @@ pub fn decrypt(ciphertext: u32, mut keys: Vec<u16>, verbose: bool) -> u32 {
     return plaintext;
 }
 
+#[pyfunction]
 /// returns the value of the sbox for any input
 ///
 /// max index is 0xf
