@@ -111,8 +111,10 @@ struct XorArgs {
 
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
 enum AlgoActions {
-    #[command(name="feistel-i")]
-    Feistel0Inner(Feistel0InnerArgs)
+    #[command(name="feistel0-i")]
+    Feistel0Inner(Feistel0InnerArgs),
+    #[command(name="feistel0-sbox")]
+    Feistel0SBOX(Feistel0SBOXArgs)
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
@@ -121,6 +123,12 @@ struct Feistel0InnerArgs {
     input: u16,
     #[clap(value_parser=maybe_hex::<u16>)]
     key: u16,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+struct Feistel0SBOXArgs {
+    #[clap(value_parser=maybe_hex::<u8>)]
+    index: u8,
 }
 
 /*************************************************************************************************/
@@ -183,7 +191,16 @@ pub fn main() {
                         println!("{}", result)
                     }
                     else {
-                        println!("result is {}", result)
+                        println!("result is {} ({:04x})", result, result)
+                    }
+                }
+                AlgoActions::Feistel0SBOX(alg_fsb_args) => {
+                    let result: u8 = algo::feistel0::sbox(alg_fsb_args.index);
+                    if args.machine {
+                        println!("{}", result)
+                    }
+                    else {
+                        println!("result is {} ({:x})", result, result)
                     }
                 }
             }
