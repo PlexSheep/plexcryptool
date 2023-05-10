@@ -114,7 +114,9 @@ enum AlgoActions {
     #[command(name="feistel0-i")]
     Feistel0Inner(Feistel0InnerArgs),
     #[command(name="feistel0-sbox")]
-    Feistel0SBOX(Feistel0SBOXArgs)
+    Feistel0SBOX(Feistel0SBOXArgs),
+    #[command(name="feistel0")]
+    Feistel0(Feistel0Args)
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
@@ -129,6 +131,14 @@ struct Feistel0InnerArgs {
 struct Feistel0SBOXArgs {
     #[clap(value_parser=maybe_hex::<u8>)]
     index: u8,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+struct Feistel0Args{
+    #[clap(value_parser=maybe_hex::<u32>)]
+    plaintext: u32,
+    #[clap(value_parser=maybe_hex::<u32>)]
+    key: u32,
 }
 
 /*************************************************************************************************/
@@ -186,7 +196,7 @@ pub fn main() {
         Commands::Algo(action) => {
             match action.action {
                 AlgoActions::Feistel0Inner(alg_fei_args) => {
-                    let result: u16 = algo::feistel0::inner(alg_fei_args.input, alg_fei_args.key);
+                    let result: u16 = algo::feistel0::inner(alg_fei_args.input, alg_fei_args.key, args.verbose);
                     if args.machine {
                         println!("{}", result)
                     }
@@ -200,7 +210,17 @@ pub fn main() {
                         println!("{}", result)
                     }
                     else {
-                        println!("result is {} ({:x})", result, result)
+                        println!("result is {} ({:08x})", result, result)
+                    }
+                }
+                AlgoActions::Feistel0(alg_fe0_args) => {
+                    let keys = algo::feistel0::key_scheduler(alg_fe0_args.key);
+                    let result: u32 = algo::feistel0::encrypt(alg_fe0_args.plaintext, keys, args.verbose);
+                    if args.machine {
+                        println!("{}", result)
+                    }
+                    else {
+                        println!("result is {} ({:016x})", result, result)
                     }
                 }
             }

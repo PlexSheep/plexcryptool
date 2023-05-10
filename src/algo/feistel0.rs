@@ -9,17 +9,18 @@
 /// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 
 const SBOX: [u8; 0x10] = [0x4, 3, 9, 0xa, 0xb, 2, 0xe, 1, 0xd, 0xc, 8, 6, 7, 5, 0, 0xf];
+const ROUNDS: u8 = 3;
 
 #[test]
 /// test inner against the given values
 fn test_inner() {
-    assert!(inner(0x1234, 0x0000) == 0x29a8);
-    assert!(inner(0x1234, 0x2345) == 0x0aed);
-    assert!(inner(0xabcd, 0xbeef) == 0x089a);
-    assert!(inner(0x9876, 0xfedc) == 0x93c5);
+    assert!(inner(0x1234, 0x0000, false) == 0x29a8);
+    assert!(inner(0x1234, 0x2345, false) == 0x0aed);
+    assert!(inner(0xabcd, 0xbeef, false) == 0x089a);
+    assert!(inner(0x9876, 0xfedc, false) == 0x93c5);
 }
 
-pub fn inner(input: u16, key: u16) -> u16 {
+pub fn inner(input: u16, key: u16, verbose: bool) -> u16 {
     // cut into u8 blocks
     let mut blocks: [u8; 4] = [
         ((input & 0xf000) >> 12).to_be_bytes()[1],
@@ -28,8 +29,10 @@ pub fn inner(input: u16, key: u16) -> u16 {
         ((input & 0x000f) >> 00).to_be_bytes()[1],
     ];
 
-    println!("{:04b} {:04b} {:04b} {:04b}", blocks[0], blocks[1], blocks[2], blocks[3]);
-    println!("{:x}{:x}{:x}{:x}", blocks[0], blocks[1], blocks[2], blocks[3]);
+    if verbose {
+        println!("{:04b} {:04b} {:04b} {:04b}", blocks[0], blocks[1], blocks[2], blocks[3]);
+        println!("{:x}{:x}{:x}{:x}", blocks[0], blocks[1], blocks[2], blocks[3]);
+    }
 
     // each block must not be more than 0xf
     for block in blocks {
@@ -42,8 +45,10 @@ pub fn inner(input: u16, key: u16) -> u16 {
     blocks[1] = SBOX[blocks[1] as usize];
     blocks[2] = SBOX[blocks[2] as usize];
 
-    println!("{:04b} {:04b} {:04b} {:04b}", blocks[0], blocks[1], blocks[2], blocks[3]);
-    println!("{:x}{:x}{:x}{:x}", blocks[0], blocks[1], blocks[2], blocks[3]);
+    if verbose {
+        println!("{:04b} {:04b} {:04b} {:04b}", blocks[0], blocks[1], blocks[2], blocks[3]);
+        println!("{:x}{:x}{:x}{:x}", blocks[0], blocks[1], blocks[2], blocks[3]);
+    }
 
     // swap position and endianess for outer blocks
     let mut b0 = 0;
@@ -60,8 +65,10 @@ pub fn inner(input: u16, key: u16) -> u16 {
     blocks[0] = b3;
     blocks[3] = b0;
     
-    println!("{:04b} {:04b} {:04b} {:04b}", blocks[0], blocks[1], blocks[2], blocks[3]);
-    println!("{:x}{:x}{:x}{:x}", blocks[0], blocks[1], blocks[2], blocks[3]);
+    if verbose {
+        println!("{:04b} {:04b} {:04b} {:04b}", blocks[0], blocks[1], blocks[2], blocks[3]);
+        println!("{:x}{:x}{:x}{:x}", blocks[0], blocks[1], blocks[2], blocks[3]);
+    }
 
     for block in blocks {
         if block > 0xf {
@@ -78,6 +85,47 @@ pub fn inner(input: u16, key: u16) -> u16 {
     return result ^ key
 }
 
+/// Boilerplate KSA, returns the same given values everytime.
+pub fn key_scheduler(key: u32) -> Vec<u16> {
+    return vec![0xdead, 0xc0ff, 0xee5a]
+}
+
+#[test]
+/// test the block encryption against the given value
+fn test_encrypt() {
+    assert_eq!(encrypt(0x12345678, vec![0x1aa2, 0x2bb3, 0x3cc4], true), 0x4313e07a);
+}
+
+/// encrypt a block
+pub fn encrypt(plaintext: u32, keys: Vec<u16>, verbose: bool) -> u32 {
+    assert_eq!(keys.len(), ROUNDS as usize);
+    let mut lef: u16 = ((plaintext & 0xffff0000) >> 16).try_into().expect("boom");
+    let mut rig: u16 = ((plaintext & 0x0000ffff) >> 0).try_into().expect("boom");
+    if verbose {
+        println!("input:\n{:08x}\n{:04x}\n    {:04x}", plaintext, lef, rig);
+    }
+    
+    for i in 0..ROUNDS {
+        let tmp = rig;
+        rig = inner(rig, keys[i as usize], false) ^ lef;
+        lef = tmp;
+        if verbose {
+            println!("{}\trig {:04x}\tlef {:04x}", i, rig, lef);
+        }
+    }
+
+    let mut ciphertext: u32 = 0;
+    ciphertext |= (lef as u32) << 16;
+    ciphertext |= rig as u32;
+    if verbose {
+        println!("returning ciphertext:\n{:08x}", ciphertext);
+    }
+    return ciphertext;
+}
+
+/// returns the value of the sbox for any input
+///
+/// max index is 0xf
 pub fn sbox(index: u8) -> u8 {
     assert!(index < 0xf);
     return SBOX[index as usize];
