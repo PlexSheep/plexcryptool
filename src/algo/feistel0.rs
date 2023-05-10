@@ -123,6 +123,50 @@ pub fn encrypt(plaintext: u32, keys: Vec<u16>, verbose: bool) -> u32 {
     return ciphertext;
 }
 
+#[test]
+/// test the block decryption against the given value
+fn test_decrypt() {
+    let keys = key_scheduler(0x1337);
+    let plaintext = 0xb00b00;
+    let ciphertext = encrypt(plaintext, keys.clone(), true);
+    let deciphertext = decrypt(ciphertext, keys.clone(), true);
+    assert_eq!(ciphertext, deciphertext);
+}
+
+/// decrypt a given plaintext with a given key vec
+pub fn decrypt(ciphertext: u32, mut keys: Vec<u16>, verbose: bool) -> u32 {
+    assert_eq!(keys.len(), ROUNDS as usize);
+    let mut lef: u16 = ((ciphertext & 0xffff0000) >> 16).try_into().expect("boom");
+    let mut rig: u16 = ((ciphertext & 0x0000ffff) >> 0).try_into().expect("boom");
+    if verbose {
+        println!("input:\n{:08x}\n{:04x}\n    {:04x}", ciphertext, lef, rig);
+    }
+
+    // swap lef rig
+    let tmp = rig;
+    rig = lef;
+    lef = tmp;
+
+    // reverse keys
+    keys.reverse();
+
+    // do the thing
+    encrypt(ciphertext, keys, verbose);
+
+    // swap lef rig back
+    let tmp = rig;
+    rig = lef;
+    lef = tmp;
+
+    let mut plaintext: u32 = 0;
+    plaintext |= (lef as u32) << 16;
+    plaintext |= rig as u32;
+    if verbose {
+        println!("returning plaintext:\n{:08x}", plaintext);
+    }
+    return plaintext;
+}
+
 /// returns the value of the sbox for any input
 ///
 /// max index is 0xf

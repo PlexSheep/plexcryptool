@@ -220,7 +220,7 @@ pub fn main() {
                         println!("{}", result)
                     }
                     else {
-                        println!("result is {} ({:016x})", result, result)
+                        println!("result is {} ({:08x})", result, result)
                     }
                 }
             }
