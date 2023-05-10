@@ -136,9 +136,11 @@ struct Feistel0SBOXArgs {
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 struct Feistel0Args{
     #[clap(value_parser=maybe_hex::<u32>)]
-    plaintext: u32,
+    input: u32,
     #[clap(value_parser=maybe_hex::<u32>)]
     key: u32,
+    #[arg(short, long, default_value_t = false)]
+    decrypt: bool,
 }
 
 /*************************************************************************************************/
@@ -215,7 +217,13 @@ pub fn main() {
                 }
                 AlgoActions::Feistel0(alg_fe0_args) => {
                     let keys = algo::feistel0::key_scheduler(alg_fe0_args.key);
-                    let result: u32 = algo::feistel0::encrypt(alg_fe0_args.plaintext, keys, args.verbose);
+                    let result: u32;
+                    if alg_fe0_args.decrypt {
+                        result = algo::feistel0::decrypt(alg_fe0_args.input, keys, args.verbose);
+                    }
+                    else {
+                        result = algo::feistel0::encrypt(alg_fe0_args.input, keys, args.verbose);
+                    }
                     if args.machine {
                         println!("{}", result)
                     }

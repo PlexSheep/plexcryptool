@@ -86,7 +86,7 @@ pub fn inner(input: u16, key: u16, verbose: bool) -> u16 {
 }
 
 /// Boilerplate KSA, returns the same given values everytime.
-pub fn key_scheduler(key: u32) -> Vec<u16> {
+pub fn key_scheduler(_key: u32) -> Vec<u16> {
     return vec![0xdead, 0xc0ff, 0xee5a]
 }
 
@@ -130,37 +130,45 @@ fn test_decrypt() {
     let plaintext = 0xb00b00;
     let ciphertext = encrypt(plaintext, keys.clone(), true);
     let deciphertext = decrypt(ciphertext, keys.clone(), true);
-    assert_eq!(ciphertext, deciphertext);
+    assert_eq!(plaintext, deciphertext);
 }
 
 /// decrypt a given plaintext with a given key vec
 pub fn decrypt(ciphertext: u32, mut keys: Vec<u16>, verbose: bool) -> u32 {
     assert_eq!(keys.len(), ROUNDS as usize);
-    let mut lef: u16 = ((ciphertext & 0xffff0000) >> 16).try_into().expect("boom");
-    let mut rig: u16 = ((ciphertext & 0x0000ffff) >> 0).try_into().expect("boom");
-    if verbose {
-        println!("input:\n{:08x}\n{:04x}\n    {:04x}", ciphertext, lef, rig);
-    }
 
     // swap lef rig
+    let mut lef: u16 = ((ciphertext & 0xffff0000) >> 16).try_into().expect("boom");
+    let mut rig: u16 = ((ciphertext & 0x0000ffff) >> 0).try_into().expect("boom");
     let tmp = rig;
     rig = lef;
     lef = tmp;
+    let mut ciphertext: u32 = 0;
+    ciphertext |= (lef as u32) << 16;
+    ciphertext |= rig as u32;
+    if verbose {
+        println!("input:\n{:08x}\n{:04x}\n    {:04x}", ciphertext, lef, rig);
+    }
 
     // reverse keys
     keys.reverse();
 
     // do the thing
-    encrypt(ciphertext, keys, verbose);
+    ciphertext = encrypt(ciphertext, keys, verbose);
 
     // swap lef rig back
+    let mut lef: u16 = ((ciphertext & 0xffff0000) >> 16).try_into().expect("boom");
+    let mut rig: u16 = ((ciphertext & 0x0000ffff) >> 0).try_into().expect("boom");
     let tmp = rig;
     rig = lef;
     lef = tmp;
-
     let mut plaintext: u32 = 0;
     plaintext |= (lef as u32) << 16;
     plaintext |= rig as u32;
+    if verbose {
+        println!("input:\n{:08x}\n{:04x}\n    {:04x}", plaintext, lef, rig);
+    }
+
     if verbose {
         println!("returning plaintext:\n{:08x}", plaintext);
     }
