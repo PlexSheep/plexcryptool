@@ -20,10 +20,13 @@
 //! Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 mod binary;
 mod math;
+mod algo;
+mod common;
 
 use std::{str::FromStr, fmt::Debug};
 
 use clap::{Args, Parser, Subcommand};
+use clap_num::maybe_hex;
 use num_bigint;
 /*************************************************************************************************/
 // This is just structures for parsing Cli args
@@ -48,7 +51,9 @@ enum Commands {
     /// Use math functions
     Math(MathCommand),
     /// Use binary functions
-    Binary(BinaryCommand)
+    Binary(BinaryCommand),
+    /// Use custom algorithms
+    Algo(AlgoCommand),
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
@@ -61,6 +66,12 @@ struct MathCommand {
 struct BinaryCommand {
     #[command(subcommand)]
     action: BinaryActions
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+struct AlgoCommand {
+    #[command(subcommand)]
+    action: AlgoActions
 }
 
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
@@ -96,6 +107,20 @@ struct RotateArgs {
 struct XorArgs {
     a: u128,
     b: u128,
+}
+
+#[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
+enum AlgoActions {
+    #[command(name="feistel-i")]
+    Feistel0Inner(Feistel0InnerArgs)
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+struct Feistel0InnerArgs {
+    #[clap(value_parser=maybe_hex::<u16>)]
+    input: u16,
+    #[clap(value_parser=maybe_hex::<u16>)]
+    key: u16,
 }
 
 /*************************************************************************************************/
@@ -149,7 +174,19 @@ pub fn main() {
                     }
                 }
             }
-            
+        }
+        Commands::Algo(action) => {
+            match action.action {
+                AlgoActions::Feistel0Inner(alg_fei_args) => {
+                    let result: u16 = algo::feistel0::inner(alg_fei_args.input, alg_fei_args.key);
+                    if args.machine {
+                        println!("{}", result)
+                    }
+                    else {
+                        println!("result is {}", result)
+                    }
+                }
+            }
         }
     }
 }
