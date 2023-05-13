@@ -31,7 +31,7 @@ use num_bigint;
 /*************************************************************************************************/
 // This is just structures for parsing Cli args
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[clap(name="plexcryptool", author="Christoph J. Scherr", version, about="Various tools for use with math and cryptology, includes executable and a library.")]
 struct Cli {
     /// Which submodule to use
     #[command(subcommand)]

@@ -8,7 +8,7 @@
 /// License:    MIT
 /// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 
-use pyo3::prelude::*;
+use pyo3::{prelude::*, exceptions::PyArithmeticError};
 
 use num::integer::gcd;
 
@@ -91,6 +91,17 @@ pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>,
         }
     }
     return Ok(prime_parts);
+}
+
+#[pyfunction]
+#[pyo3(name = "p_minus_one")]
+/// python wrapper for p_minus_one
+pub fn py_p_minus_one(n: u128, max_prime: u128, verbose: bool)-> PyResult<Vec<u128>> {
+    let res = p_minus_one(n, max_prime, verbose);
+    match res {
+        Ok(vec) => Ok(vec),
+        Err(e) => Err(PyArithmeticError::new_err(e))
+    }
 }
 
 /// alternative simple implementation for gcd
