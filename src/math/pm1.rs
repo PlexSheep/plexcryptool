@@ -11,34 +11,33 @@
 use pyo3::{prelude::*, exceptions::PyArithmeticError};
 
 use num::integer::gcd;
-
 use num_bigint::BigInt;
+use num_traits::ToPrimitive;
 
-use primes::{Sieve, PrimeSet};
+use primes::{Sieve, PrimeSet, is_prime};
 
 use crate::math::modexp;
 
+const MAX_PRIMES: u128 = 80u128;
+
 /// excecute the p minus one calculation
 pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>, String> {
-    assert!(n > 2);
-    let m1: u128 = n -1;
+    if n < 3 {
+        return Err(format!("n too small: {n}"));
+    }
+    if max_prime > MAX_PRIMES {
+        return Err(format!("max_prime too large: {max_prime}"));
+    }
     let mut k_parts: Vec<(u128, u32)> = Vec::new();
     let mut prime_parts: Vec<u128> = Vec::new();
-    //
     // get a list of the early primes
     let mut pset = Sieve::new();
-    if verbose {
-        println!("getting list of first {max_prime} primes");
-}
     for (_i_prime, prime) in pset.iter().enumerate().take(max_prime as usize) {
         let num: u128 = prime as u128;
         if num > max_prime {
             break;
         }
         let mut exp: u32 = 1;
-        if verbose {
-            println!("current prime: {num}");
-        }
         loop {
             if num.pow(exp + 1) < max_prime {
                 exp += 1;
@@ -46,9 +45,6 @@ pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>,
             else {
                 break;
             }
-        }
-        if verbose {
-            println!("exponented prime: {}", num.pow(exp));
         }
         k_parts.push((num, exp));
     }
@@ -62,32 +58,52 @@ pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>,
     if verbose {
         println!("k: {k}\nk parts: {:?}", k_parts);
     }
-
-    let a = 2u128;
-    let akn1: u128 = ((modexp::modular_exponentiation(
+    let mut a = 2u128;
+    let mut akn1: u128;
+    let mut g: u128;
+    let mut q: u128;
+    let mut n = n;
+    println!("=======================================================================");
+    loop {
+        assert!(n > 1);
+        dbg!(&n);
+        if verbose {
+            println!("modular exponentiation with: a={a} k={k} n={n}");
+        }
+        akn1 = modexp::modular_exponentiation(
             BigInt::from(a), 
             BigInt::from(k), 
             BigInt::from(n), 
-            false)
-        ) - BigInt::from(1)).try_into().expect("Number too big");
-    if verbose {
-        println!("a: {a}\na**k-1 {akn1}");
-    }
-    let mut next_gcd = gcd(akn1, n);
-
-    if next_gcd == 1 {
-        return Err(format!("P minus one does not offer divisor for {n} with max_prime: {max_prime}"));
-    }
-    let mut q: u128;
-    while next_gcd > 1 {
-        prime_parts.push(next_gcd);
-        q = n / next_gcd;
-        next_gcd = gcd(q, n);
+            false).to_u128().expect("Number too large") - 1;
         if verbose {
-            println!("nextgcd: {next_gcd}|q: {q}");
+            println!("a**k - 1 = {a}**{k} - 1 mod {n} = {akn1}");
         }
-        if prime_parts.contains(&next_gcd) {
-            break;
+        g = gcd(akn1, n);
+        if verbose {
+            println!("g = gcd(akn1, n) = gcd({akn1}, {n}) = {g}");
+        }
+        if g == 1 {
+            println!("=======================================================================");
+            return Err(format!("P minus one does not work for this setup. Use another algorithm or choose a higher max prime."));
+        }
+        if g == n {
+            dbg!(&n);
+            if verbose {
+                println!("g = {g} = {n} = n");
+                println!("bad a, using a=a+1");
+            }
+            a += 1;
+        }
+        else {
+            n = n / g;
+            prime_parts.push(g);
+            if is_prime(n as u64) {
+                prime_parts.push(n);
+                break;
+            }
+        }
+        if verbose {
+            println!("=======================================================================");
         }
     }
     return Ok(prime_parts);
