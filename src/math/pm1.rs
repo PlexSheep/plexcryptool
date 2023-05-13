@@ -61,20 +61,30 @@ pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>,
     let mut a = 2u128;
     let mut akn1: u128;
     let mut g: u128;
-    let mut q: u128;
     let mut n = n;
+    let mut last_n = 0;
     println!("=======================================================================");
     loop {
         assert!(n > 1);
         dbg!(&n);
         if verbose {
-            println!("modular exponentiation with: a={a} k={k} n={n}");
+            println!("modular exponentiation with: a={a}, k={k}, n={n}");
         }
         akn1 = modexp::modular_exponentiation(
             BigInt::from(a), 
             BigInt::from(k), 
             BigInt::from(n), 
-            false).to_u128().expect("Number too large") - 1;
+            false).to_u128().expect("Number too large");
+        if akn1 == 0 {
+            //return Err(format!("{a}**{k} - 1 mod {n} = 0"));
+            akn1 = n;
+        }
+        assert_ne!(akn1, 0);
+        let akn1 = akn1 - 1;
+        if akn1 == 0 {
+            a += 1;
+        }
+        //assert_ne!(akn1, 0);
         if verbose {
             println!("a**k - 1 = {a}**{k} - 1 mod {n} = {akn1}");
         }
@@ -84,9 +94,10 @@ pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>,
         }
         if g == 1 {
             println!("=======================================================================");
-            return Err(format!("P minus one does not work for this setup. Use another algorithm or choose a higher max prime."));
+            //return Err(format!("P minus one does not work for this setup. Use another algorithm or choose a higher max prime."));
+            break
         }
-        if g == n {
+        else if g == n {
             dbg!(&n);
             if verbose {
                 println!("g = {g} = {n} = n");
@@ -95,15 +106,34 @@ pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>,
             a += 1;
         }
         else {
-            n = n / g;
-            prime_parts.push(g);
-            if is_prime(n as u64) {
+            last_n = n;
+            if verbose {
+                println!("n is prime: {n}");
+                println!("g is prime: {g}");
+                println!("last n is {last_n}");
+            }
+            if is_prime(n as u64) && is_prime(g as u64) {
+                prime_parts.push(g);
                 prime_parts.push(n);
                 break;
+            }
+            else if is_prime(g as u64) {
+                prime_parts.push(g);
+                n = n / g;
+            }
+            else if is_prime(n as u64) {
+                prime_parts.push(n);
+                n = g;
+            }
+            else {
+                n = n / g;
             }
         }
         if verbose {
             println!("=======================================================================");
+        }
+        if last_n == n {
+            panic!("last n is the same as current n");
         }
     }
     return Ok(prime_parts);
