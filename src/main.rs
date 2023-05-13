@@ -78,6 +78,7 @@ struct AlgoCommand {
 enum MathActions {
     #[command(name="modexp")]
     Modexp(ModexpArgs),
+    Pm1(PM1Args),
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
@@ -85,6 +86,12 @@ struct ModexpArgs {
     base: String,
     exp: String,
     field: String
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+struct PM1Args {
+    n: u128,
+    max_prime: u128,
 }
 
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
@@ -163,6 +170,31 @@ pub fn main() {
                     }
                     else {
                         println!("result is {}", result)
+                    }
+                }
+                MathActions::Pm1(pm1_args) => {
+                    let result: Result<Vec<u128>, String> = math::pm1::p_minus_one(
+                        pm1_args.n, 
+                        pm1_args.max_prime,
+                        args.verbose
+                        );
+                    match result {
+                        Ok(vec) => {
+                            if args.machine {
+                                println!("{:?}", vec)
+                            }
+                            else {
+                                println!("result is {:?}", vec)
+                            }
+                        }
+                        Err(e) => {
+                            if args.machine {
+                                println!("{:?}", e)
+                            }
+                            else {
+                                println!("could not compute: {:?}", e)
+                            }
+                        }
                     }
                 }
             }

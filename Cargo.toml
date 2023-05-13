@@ -16,6 +16,8 @@ path = "src/main.rs"
 [dependencies]
 clap = { version = "4.2.7", features = ["derive"]}
 clap-num = "1.0.2"
+num = "0.4.0"
 num-bigint = "0.4.3"
 num-traits = "0.2.15"
+primes = "0.3.0"
 pyo3 = "0.18.1"
