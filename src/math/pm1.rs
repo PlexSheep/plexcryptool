@@ -107,6 +107,7 @@ pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>,
         }
         else {
             last_n = n;
+            n = n / g;
             if verbose {
                 println!("n is prime: {n}");
                 println!("g is prime: {g}");
@@ -119,14 +120,13 @@ pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>,
             }
             else if is_prime(g as u64) {
                 prime_parts.push(g);
-                n = n / g;
             }
             else if is_prime(n as u64) {
                 prime_parts.push(n);
                 n = g;
             }
             else {
-                n = n / g;
+                println!("IN THE STUPID PART!!!!!!1");
             }
         }
         if verbose {
