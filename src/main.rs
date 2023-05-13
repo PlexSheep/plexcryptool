@@ -169,6 +169,7 @@ pub fn main() {
                         println!("{}", result)
                     }
                     else {
+                        println!("=======================================================================");
                         println!("result is {}", result)
                     }
                 }
@@ -184,6 +185,7 @@ pub fn main() {
                                 println!("{:?}", vec)
                             }
                             else {
+                                println!("=======================================================================");
                                 println!("result is {:?}", vec)
                             }
                         }
@@ -192,6 +194,7 @@ pub fn main() {
                                 println!("{:?}", e)
                             }
                             else {
+                                println!("=======================================================================");
                                 println!("could not compute: {:?}", e)
                             }
                         }
@@ -213,6 +216,7 @@ pub fn main() {
                         println!("{}", result)
                     }
                     else {
+                        println!("=======================================================================");
                         println!("result is {}", result)
                     }
                 },
@@ -222,6 +226,7 @@ pub fn main() {
                         println!("{}", result)
                     }
                     else {
+                        println!("=======================================================================");
                         println!("result is {}", result)
                     }
                 }
@@ -235,6 +240,7 @@ pub fn main() {
                         println!("{}", result)
                     }
                     else {
+                        println!("=======================================================================");
                         println!("result is {} ({:04x})", result, result)
                     }
                 }
@@ -244,6 +250,7 @@ pub fn main() {
                         println!("{}", result)
                     }
                     else {
+                        println!("=======================================================================");
                         println!("result is {} ({:08x})", result, result)
                     }
                 }
@@ -260,6 +267,7 @@ pub fn main() {
                         println!("{}", result)
                     }
                     else {
+                        println!("=======================================================================");
                         println!("result is {} ({:08x})", result, result)
                     }
                 }

@@ -28,6 +28,9 @@ pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>,
     if max_prime > MAX_PRIMES {
         return Err(format!("max_prime too large: {max_prime}"));
     }
+    if is_prime(n as u64) {
+        return Ok(vec![n]);
+    }
     let mut k_parts: Vec<(u128, u32)> = Vec::new();
     let mut prime_parts: Vec<u128> = Vec::new();
     // get a list of the early primes
@@ -63,10 +66,11 @@ pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>,
     let mut g: u128;
     let mut n = n;
     let mut last_n = 0;
-    println!("=======================================================================");
+    if verbose {
+        println!("=======================================================================");
+    }
     loop {
         assert!(n > 1);
-        dbg!(&n);
         if verbose {
             println!("modular exponentiation with: a={a}, k={k}, n={n}");
         }
@@ -83,6 +87,7 @@ pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>,
         let akn1 = akn1 - 1;
         if akn1 == 0 {
             a += 1;
+            continue;
         }
         //assert_ne!(akn1, 0);
         if verbose {
@@ -93,12 +98,13 @@ pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>,
             println!("g = gcd(akn1, n) = gcd({akn1}, {n}) = {g}");
         }
         if g == 1 {
-            println!("=======================================================================");
-            //return Err(format!("P minus one does not work for this setup. Use another algorithm or choose a higher max prime."));
-            break
+            if verbose {
+                println!("=======================================================================");
+            }
+            return Err(format!("P minus one does not work for this setup. Use another algorithm or choose a higher max prime."));
+            //return p_minus_one(n, 70, verbose);
         }
         else if g == n {
-            dbg!(&n);
             if verbose {
                 println!("g = {g} = {n} = n");
                 println!("bad a, using a=a+1");
@@ -120,13 +126,53 @@ pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>,
             }
             else if is_prime(g as u64) {
                 prime_parts.push(g);
+                if verbose {
+                    println!("calculating primes for {g}");
+                }
+                let primes_of = p_minus_one(g, max_prime, false);
+                if primes_of.is_err() {
+                    return  primes_of;
+                }
+                if verbose {
+                    dbg!(&primes_of);
+                }
+                prime_parts.append(&mut primes_of.unwrap());
             }
             else if is_prime(n as u64) {
                 prime_parts.push(n);
+                if verbose {
+                    println!("calculating primes for {g}");
+                }
+                let primes_of = p_minus_one(g, max_prime, false);
+                if primes_of.is_err() {
+                    return  primes_of;
+                }
+                if verbose {
+                    dbg!(&primes_of);
+                }
+                prime_parts.append(&mut primes_of.unwrap());
                 n = g;
             }
             else {
-                println!("IN THE STUPID PART!!!!!!1");
+                if verbose {
+                    println!("calculating primes for {g} and {n}");
+                }
+                let primes_of = p_minus_one(g, max_prime, false);
+                if primes_of.is_err() {
+                    return  primes_of;
+                }
+                if verbose {
+                    dbg!(&primes_of);
+                }
+                prime_parts.append(&mut primes_of.unwrap());
+                let primes_of = p_minus_one(n, max_prime, false);
+                if primes_of.is_err() {
+                    return  primes_of;
+                }
+                if verbose {
+                    dbg!(&primes_of);
+                }
+                prime_parts.append(&mut primes_of.unwrap());
             }
         }
         if verbose {
@@ -136,6 +182,11 @@ pub fn p_minus_one(n: u128, max_prime: u128, verbose: bool) -> Result<Vec<u128>,
             panic!("last n is the same as current n");
         }
     }
+    if prime_parts.len() == 0 {
+        //return Err(format!("Found no results?"));
+    }
+    prime_parts.sort();
+    prime_parts.dedup();
     return Ok(prime_parts);
 }
 
