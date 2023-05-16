@@ -21,7 +21,7 @@
 mod binary;
 mod math;
 mod algo;
-mod common;
+mod common_plex;
 
 use std::{str::FromStr, fmt::Debug};
 
@@ -180,11 +180,11 @@ pub fn main() {
                     let e = num_bigint::BigInt::from_str(&mod_exp_args.exp.as_str()).expect("could not make bigint");
                     let f = num_bigint::BigInt::from_str(&mod_exp_args.field.as_str()).expect("could not make bigint");
                     let num = math::modexp::modular_exponentiation(b.clone(), e, f, args.verbose);
-                    common::common::proc_num(num, args);
+                    common_plex::printing::proc_num(num, args);
                 }
                 MathActions::Modred(mod_red_args) => {
                     let result = math::modred::modred(mod_red_args.polynomial, mod_red_args.relation, args.verbose);
-                    common::common::proc_result(result, args);
+                    common_plex::printing::proc_result(result, args);
                 }
                 MathActions::Pm1(pm1_args) => {
                     let vec: Result<Vec<u128>, String> = math::pm1::p_minus_one(
@@ -192,7 +192,7 @@ pub fn main() {
                         pm1_args.max_prime,
                         args.verbose
                         );
-                    common::common::proc_result_vec(vec, args);
+                    common_plex::printing::proc_result_vec(vec, args);
                 }
             }
         }
@@ -206,11 +206,11 @@ pub fn main() {
                     else {
                         result = binary::rotr32(bin_rot_args.base, bin_rot_args.shift_width);
                     }
-                    common::common::proc_num(result, args);
+                    common_plex::printing::proc_num(result, args);
                 },
                 BinaryActions::Xor(bin_xor_args) => {
                     let result: u128 = binary::xor(bin_xor_args.a, bin_xor_args.b);
-                    common::common::proc_num(result, args);
+                    common_plex::printing::proc_num(result, args);
                 }
             }
         }
@@ -218,11 +218,11 @@ pub fn main() {
             match action.action {
                 AlgoActions::Feistel0Inner(alg_fei_args) => {
                     let result: u16 = algo::feistel0::inner(alg_fei_args.input, alg_fei_args.key, args.verbose);
-                    common::common::proc_num(result, args);
+                    common_plex::printing::proc_num(result, args);
                 }
                 AlgoActions::Feistel0SBOX(alg_fsb_args) => {
                     let result: u8 = algo::feistel0::sbox(alg_fsb_args.index);
-                    common::common::proc_num(result, args);
+                    common_plex::printing::proc_num(result, args);
                 }
                 AlgoActions::Feistel0(alg_fe0_args) => {
                     let keys = algo::feistel0::key_scheduler(alg_fe0_args.key);
@@ -233,7 +233,7 @@ pub fn main() {
                     else {
                         result = algo::feistel0::encrypt(alg_fe0_args.input, keys, args.verbose);
                     }
-                    common::common::proc_num(result, args);
+                    common_plex::printing::proc_num(result, args);
                 }
             }
         }
