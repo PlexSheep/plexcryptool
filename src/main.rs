@@ -30,9 +30,9 @@ use clap_num::maybe_hex;
 use num_bigint;
 /*************************************************************************************************/
 // This is just structures for parsing Cli args
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[clap(name="plexcryptool", author="Christoph J. Scherr", version, about="Various tools for use with math and cryptology, includes executable and a library.")]
-struct Cli {
+pub struct Cli {
     /// Which submodule to use
     #[command(subcommand)]
     command: Commands,
@@ -46,7 +46,7 @@ struct Cli {
     verbose: bool,
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, Clone)]
 enum Commands {
     /// Use math functions
     Math(MathCommand),
@@ -172,71 +172,27 @@ struct Feistel0Args{
 /// internal functions with the corresponding values, then shows the results to the user.
 pub fn main() {
     let args = Cli::parse();
-    match args.command {
+    match args.clone().command {
         Commands::Math(action) => {
             match action.action {
                 MathActions::Modexp(mod_exp_args) => {
                     let b = num_bigint::BigInt::from_str(&mod_exp_args.base.as_str()).expect("could not make bigint");
                     let e = num_bigint::BigInt::from_str(&mod_exp_args.exp.as_str()).expect("could not make bigint");
                     let f = num_bigint::BigInt::from_str(&mod_exp_args.field.as_str()).expect("could not make bigint");
-                    let result = math::modexp::modular_exponentiation(b.clone(), e, f, args.verbose);
-                    if args.machine {
-                        println!("{}", result)
-                    }
-                    else {
-                        println!("=======================================================================");
-                        println!("result is {}", result)
-                    }
+                    let num = math::modexp::modular_exponentiation(b.clone(), e, f, args.verbose);
+                    common::common::proc_num(num, args);
                 }
                 MathActions::Modred(mod_red_args) => {
                     let result = math::modred::modred(mod_red_args.polynomial, mod_red_args.relation, args.verbose);
-                    match result {
-                        Ok(res) => {
-                            if args.machine {
-                                println!("0x{:x}", res)
-                            }
-                            else {
-                                println!("=======================================================================");
-                                println!("result is 0x{:x}", res)
-                            }
-                        }
-                        Err(e) => {
-                            if args.machine {
-                                println!("{:?}", e)
-                            }
-                            else {
-                                println!("=======================================================================");
-                                println!("could not compute: {:?}", e)
-                            }
-                        }
-                    }
+                    common::common::proc_result(result, args);
                 }
                 MathActions::Pm1(pm1_args) => {
-                    let result: Result<Vec<u128>, String> = math::pm1::p_minus_one(
+                    let vec: Result<Vec<u128>, String> = math::pm1::p_minus_one(
                         pm1_args.n, 
                         pm1_args.max_prime,
                         args.verbose
                         );
-                    match result {
-                        Ok(vec) => {
-                            if args.machine {
-                                println!("{:?}", vec)
-                            }
-                            else {
-                                println!("=======================================================================");
-                                println!("result is {:?}", vec)
-                            }
-                        }
-                        Err(e) => {
-                            if args.machine {
-                                println!("{:?}", e)
-                            }
-                            else {
-                                println!("=======================================================================");
-                                println!("could not compute: {:?}", e)
-                            }
-                        }
-                    }
+                    common::common::proc_result_vec(vec, args);
                 }
             }
         }
@@ -250,23 +206,11 @@ pub fn main() {
                     else {
                         result = binary::rotr32(bin_rot_args.base, bin_rot_args.shift_width);
                     }
-                    if args.machine {
-                        println!("{}", result)
-                    }
-                    else {
-                        println!("=======================================================================");
-                        println!("result is {}", result)
-                    }
+                    common::common::proc_num(result, args);
                 },
                 BinaryActions::Xor(bin_xor_args) => {
                     let result: u128 = binary::xor(bin_xor_args.a, bin_xor_args.b);
-                    if args.machine {
-                        println!("{}", result)
-                    }
-                    else {
-                        println!("=======================================================================");
-                        println!("result is {}", result)
-                    }
+                    common::common::proc_num(result, args);
                 }
             }
         }
@@ -274,23 +218,11 @@ pub fn main() {
             match action.action {
                 AlgoActions::Feistel0Inner(alg_fei_args) => {
                     let result: u16 = algo::feistel0::inner(alg_fei_args.input, alg_fei_args.key, args.verbose);
-                    if args.machine {
-                        println!("{}", result)
-                    }
-                    else {
-                        println!("=======================================================================");
-                        println!("result is {} ({:04x})", result, result)
-                    }
+                    common::common::proc_num(result, args);
                 }
                 AlgoActions::Feistel0SBOX(alg_fsb_args) => {
                     let result: u8 = algo::feistel0::sbox(alg_fsb_args.index);
-                    if args.machine {
-                        println!("{}", result)
-                    }
-                    else {
-                        println!("=======================================================================");
-                        println!("result is {} ({:08x})", result, result)
-                    }
+                    common::common::proc_num(result, args);
                 }
                 AlgoActions::Feistel0(alg_fe0_args) => {
                     let keys = algo::feistel0::key_scheduler(alg_fe0_args.key);
@@ -301,13 +233,7 @@ pub fn main() {
                     else {
                         result = algo::feistel0::encrypt(alg_fe0_args.input, keys, args.verbose);
                     }
-                    if args.machine {
-                        println!("{}", result)
-                    }
-                    else {
-                        println!("=======================================================================");
-                        println!("result is {} ({:08x})", result, result)
-                    }
+                    common::common::proc_num(result, args);
                 }
             }
         }
