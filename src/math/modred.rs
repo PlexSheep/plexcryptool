@@ -26,21 +26,19 @@ pub fn modred(mut poly: u64, relation: u64, verbose: bool) -> Result<u64, String
         println!("polynomial:\t0x{:x}\t", poly);
         println!("=======================================================================");
     }
-    while relation.leading_zeros() - poly.leading_zeros() != 0 {
+    if relation > poly {
+        if verbose {
+            println!("relation is longer than polynom, nothing to do.");
+        }
+        return Ok(poly);
+    }
+    while poly > relation {
         diffrence = relation.leading_zeros() - poly.leading_zeros();
         poly = poly ^ (relation << diffrence);
         if verbose {
-            println!("{index}:\tpoly: 0x{:x}\t", poly);
-            //println!("{index}:\tpoly: 0b{:b}\t", poly);
+        println!("{index}:\tpoly: 0x{:x}\t 0b{:b}", poly, poly);
         }
         index += 1;
-    }
-    // one more time!
-    diffrence = relation.leading_zeros() - poly.leading_zeros();
-    poly = poly ^ (relation << diffrence);
-    if verbose {
-        println!("{index}:\tpoly: 0x{:x}\t", poly);
-        //println!("{index}:\tpoly: 0b{:b}\t", poly);
     }
     return Ok(poly);
 }
