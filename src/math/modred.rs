@@ -10,6 +10,8 @@
 /// License:    MIT
 /// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 
+use crate::cplex;
+
 #[test]
 fn test_modred() {
     let rel: u64 = 0x1053;
@@ -22,9 +24,9 @@ pub fn modred(mut poly: u64, relation: u64, verbose: bool) -> Result<u64, String
     let mut diffrence: u32;
     let mut index: usize = 0;
     if verbose {
-        println!("relation:\t0x{:x}\t", relation);
-        println!("polynomial:\t0x{:x}\t", poly);
-        println!("=======================================================================");
+        println!("relation:\t{:#x}\t", relation);
+        println!("polynomial:\t{:#x}\t", poly);
+        println!("{:=<120}", '=');
     }
     if relation > poly {
         if verbose {
@@ -36,7 +38,7 @@ pub fn modred(mut poly: u64, relation: u64, verbose: bool) -> Result<u64, String
         diffrence = relation.leading_zeros() - poly.leading_zeros();
         poly = poly ^ (relation << diffrence);
         if verbose {
-        println!("{index}:\tpoly: 0x{:x}\t 0b{:b}", poly, poly);
+        println!("{index}:\tpoly: {:#x}\t {:#064b}", poly, poly);
         }
         index += 1;
     }

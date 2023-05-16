@@ -1,4 +1,4 @@
-/// # common module
+/// # cplex module
 ///
 /// This module implements functionality used by multiple other ones.
 ///

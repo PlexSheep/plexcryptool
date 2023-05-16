@@ -23,6 +23,7 @@ use pyo3::prelude::*;
 mod binary;
 mod math;
 mod algo;
+mod cplex;
 
 #[pymodule]
 fn register_binary_module(py: Python, parent_module: &PyModule) -> PyResult<()> {

@@ -8,11 +8,14 @@
 /// License:    MIT
 /// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 
-use crate::Cli;
-
 use std::fmt::{Debug, LowerHex};
 
 use num::Integer;
+
+/// print a seperator
+pub fn seperator() {
+    println!("{:=<120}", '=');
+}
 
 /// process a result with some int
 pub fn proc_result<T>(result: Result<T, String>, args: Cli)
@@ -27,7 +30,7 @@ pub fn proc_result<T>(result: Result<T, String>, args: Cli)
                 println!("{:#x}", res);
             }
             else {
-                println!("=======================================================================");
+                seperator();
                 println!("result is {:#x}", res);
             }
         }
@@ -36,7 +39,7 @@ pub fn proc_result<T>(result: Result<T, String>, args: Cli)
                 println!("{:#?}", e)
             }
             else {
-                println!("=======================================================================");
+                seperator();
                 println!("could not compute:\n{:#?}", e)
             }
         }
@@ -54,7 +57,7 @@ pub fn proc_num<T>(num: T, args: Cli)
         println!("{:#x}", num);
     }
     else {
-        println!("=======================================================================");
+        seperator();
         println!("result is {:#x}", num);
     }
 }
@@ -68,7 +71,7 @@ pub fn proc_vec<T>(vec: Vec<T>, args: Cli)
         println!("{:#?}", vec);
     }
     else {
-        println!("=======================================================================");
+        seperator();
         println!("result is\n{:#?}", vec);
     }
 }
@@ -84,7 +87,7 @@ pub fn proc_result_vec<T>(res: Result<Vec<T>, String>, args: Cli)
                 println!("{:#?}", vec);
             }
             else {
-                println!("=======================================================================");
+                seperator();
                 println!("result is {:#?}", vec);
             }
         }
@@ -93,7 +96,7 @@ pub fn proc_result_vec<T>(res: Result<Vec<T>, String>, args: Cli)
                 println!("{:#?}", e)
             }
             else {
-                println!("=======================================================================");
+                seperator();
                 println!("could not compute:\n{:#?}", e)
             }
         }

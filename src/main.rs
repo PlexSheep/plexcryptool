@@ -21,7 +21,7 @@
 mod binary;
 mod math;
 mod algo;
-mod common_plex;
+mod cplex;
 
 use std::{str::FromStr, fmt::Debug};
 
@@ -29,7 +29,7 @@ use clap::{Args, Parser, Subcommand};
 use clap_num::maybe_hex;
 use num_bigint;
 /*************************************************************************************************/
-// This is just structures for parsing Cli args
+/// This is just structures for parsing Cli args
 #[derive(Parser, Debug, Clone)]
 #[clap(name="plexcryptool", author="Christoph J. Scherr", version, about="Various tools for use with math and cryptology, includes executable and a library.")]
 pub struct Cli {
@@ -47,7 +47,7 @@ pub struct Cli {
 }
 
 #[derive(Subcommand, Debug, Clone)]
-enum Commands {
+pub enum Commands {
     /// Use math functions
     Math(MathCommand),
     /// Use binary functions
@@ -57,25 +57,25 @@ enum Commands {
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
-struct MathCommand {
+pub struct MathCommand {
     #[command(subcommand)]
     action: MathActions
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
-struct BinaryCommand {
+pub struct BinaryCommand {
     #[command(subcommand)]
     action: BinaryActions
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
-struct AlgoCommand {
+pub struct AlgoCommand {
     #[command(subcommand)]
     action: AlgoActions
 }
 
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
-enum MathActions {
+pub enum MathActions {
     #[command(name="modexp")]
     Modexp(ModexpArgs),
     Modred(ModredArgs),
@@ -83,14 +83,14 @@ enum MathActions {
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
-struct ModexpArgs {
+pub struct ModexpArgs {
     base: String,
     exp: String,
     field: String
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
-struct ModredArgs {
+pub struct ModredArgs {
     #[clap(value_parser=maybe_hex::<u64>)]
     polynomial: u64,
     #[clap(value_parser=maybe_hex::<u64>)]
@@ -98,7 +98,7 @@ struct ModredArgs {
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
-struct PM1Args {
+pub struct PM1Args {
     #[clap(value_parser=maybe_hex::<u128>)]
     n: u128,
     #[clap(value_parser=maybe_hex::<u128>)]
@@ -106,7 +106,7 @@ struct PM1Args {
 }
 
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
-enum BinaryActions {
+pub enum BinaryActions {
     /// bit rotation/circular shifting (only 32bit)
     #[command(name="rotate")]
     Rotate(RotateArgs),
@@ -114,7 +114,7 @@ enum BinaryActions {
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
-struct RotateArgs {
+pub struct RotateArgs {
     #[arg(short, long, default_value_t = false)]
     left: bool,
     #[clap(value_parser=maybe_hex::<u32>)]
@@ -124,7 +124,7 @@ struct RotateArgs {
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
-struct XorArgs {
+pub struct XorArgs {
     #[clap(value_parser=maybe_hex::<u128>)]
     a: u128,
     #[clap(value_parser=maybe_hex::<u128>)]
@@ -132,7 +132,7 @@ struct XorArgs {
 }
 
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
-enum AlgoActions {
+pub enum AlgoActions {
     #[command(name="feistel0-i")]
     Feistel0Inner(Feistel0InnerArgs),
     #[command(name="feistel0-sbox")]
@@ -142,7 +142,7 @@ enum AlgoActions {
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
-struct Feistel0InnerArgs {
+pub struct Feistel0InnerArgs {
     #[clap(value_parser=maybe_hex::<u16>)]
     input: u16,
     #[clap(value_parser=maybe_hex::<u16>)]
@@ -150,13 +150,13 @@ struct Feistel0InnerArgs {
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
-struct Feistel0SBOXArgs {
+pub struct Feistel0SBOXArgs {
     #[clap(value_parser=maybe_hex::<u8>)]
     index: u8,
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
-struct Feistel0Args{
+pub struct Feistel0Args{
     #[clap(value_parser=maybe_hex::<u32>)]
     input: u32,
     #[clap(value_parser=maybe_hex::<u32>)]
@@ -172,6 +172,9 @@ struct Feistel0Args{
 /// internal functions with the corresponding values, then shows the results to the user.
 pub fn main() {
     let args = Cli::parse();
+    if args.verbose {
+        cplex::printing::seperator();
+    }
     match args.clone().command {
         Commands::Math(action) => {
             match action.action {
@@ -180,11 +183,11 @@ pub fn main() {
                     let e = num_bigint::BigInt::from_str(&mod_exp_args.exp.as_str()).expect("could not make bigint");
                     let f = num_bigint::BigInt::from_str(&mod_exp_args.field.as_str()).expect("could not make bigint");
                     let num = math::modexp::modular_exponentiation(b.clone(), e, f, args.verbose);
-                    common_plex::printing::proc_num(num, args);
+                    cplex::printing::proc_num(num, args);
                 }
                 MathActions::Modred(mod_red_args) => {
                     let result = math::modred::modred(mod_red_args.polynomial, mod_red_args.relation, args.verbose);
-                    common_plex::printing::proc_result(result, args);
+                    cplex::printing::proc_result(result, args);
                 }
                 MathActions::Pm1(pm1_args) => {
                     let vec: Result<Vec<u128>, String> = math::pm1::p_minus_one(
@@ -192,7 +195,7 @@ pub fn main() {
                         pm1_args.max_prime,
                         args.verbose
                         );
-                    common_plex::printing::proc_result_vec(vec, args);
+                    cplex::printing::proc_result_vec(vec, args);
                 }
             }
         }
@@ -206,11 +209,11 @@ pub fn main() {
                     else {
                         result = binary::rotr32(bin_rot_args.base, bin_rot_args.shift_width);
                     }
-                    common_plex::printing::proc_num(result, args);
+                    cplex::printing::proc_num(result, args);
                 },
                 BinaryActions::Xor(bin_xor_args) => {
                     let result: u128 = binary::xor(bin_xor_args.a, bin_xor_args.b);
-                    common_plex::printing::proc_num(result, args);
+                    cplex::printing::proc_num(result, args);
                 }
             }
         }
@@ -218,11 +221,11 @@ pub fn main() {
             match action.action {
                 AlgoActions::Feistel0Inner(alg_fei_args) => {
                     let result: u16 = algo::feistel0::inner(alg_fei_args.input, alg_fei_args.key, args.verbose);
-                    common_plex::printing::proc_num(result, args);
+                    cplex::printing::proc_num(result, args);
                 }
                 AlgoActions::Feistel0SBOX(alg_fsb_args) => {
                     let result: u8 = algo::feistel0::sbox(alg_fsb_args.index);
-                    common_plex::printing::proc_num(result, args);
+                    cplex::printing::proc_num(result, args);
                 }
                 AlgoActions::Feistel0(alg_fe0_args) => {
                     let keys = algo::feistel0::key_scheduler(alg_fe0_args.key);
@@ -233,7 +236,7 @@ pub fn main() {
                     else {
                         result = algo::feistel0::encrypt(alg_fe0_args.input, keys, args.verbose);
                     }
-                    common_plex::printing::proc_num(result, args);
+                    cplex::printing::proc_num(result, args);
                 }
             }
         }
