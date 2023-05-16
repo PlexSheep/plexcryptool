@@ -78,6 +78,7 @@ struct AlgoCommand {
 enum MathActions {
     #[command(name="modexp")]
     Modexp(ModexpArgs),
+    Modred(ModredArgs),
     Pm1(PM1Args),
 }
 
@@ -89,8 +90,18 @@ struct ModexpArgs {
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
+struct ModredArgs {
+    #[clap(value_parser=maybe_hex::<u64>)]
+    polynomial: u64,
+    #[clap(value_parser=maybe_hex::<u64>)]
+    relation: u64,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
 struct PM1Args {
+    #[clap(value_parser=maybe_hex::<u128>)]
     n: u128,
+    #[clap(value_parser=maybe_hex::<u128>)]
     max_prime: u128,
 }
 
@@ -106,13 +117,17 @@ enum BinaryActions {
 struct RotateArgs {
     #[arg(short, long, default_value_t = false)]
     left: bool,
+    #[clap(value_parser=maybe_hex::<u32>)]
     base: u32,
+    #[clap(value_parser=maybe_hex::<u32>)]
     shift_width: u32,
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 struct XorArgs {
+    #[clap(value_parser=maybe_hex::<u128>)]
     a: u128,
+    #[clap(value_parser=maybe_hex::<u128>)]
     b: u128,
 }
 
@@ -171,6 +186,29 @@ pub fn main() {
                     else {
                         println!("=======================================================================");
                         println!("result is {}", result)
+                    }
+                }
+                MathActions::Modred(mod_red_args) => {
+                    let result = math::modred::modred(mod_red_args.polynomial, mod_red_args.relation, args.verbose);
+                    match result {
+                        Ok(res) => {
+                            if args.machine {
+                                println!("0x{:x}", res)
+                            }
+                            else {
+                                println!("=======================================================================");
+                                println!("result is 0x{:x}", res)
+                            }
+                        }
+                        Err(e) => {
+                            if args.machine {
+                                println!("{:?}", e)
+                            }
+                            else {
+                                println!("=======================================================================");
+                                println!("could not compute: {:?}", e)
+                            }
+                        }
                     }
                 }
                 MathActions::Pm1(pm1_args) => {
