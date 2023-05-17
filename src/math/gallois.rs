@@ -1,6 +1,4 @@
 #![allow(dead_code)]
-use num::Integer;
-
 /// calculation in a gallois field
 ///
 /// This module contains functions that can be used to calculate things in a gallois field
@@ -12,6 +10,8 @@ use num::Integer;
 use crate::math::modexp;
 
 use core::fmt;
+
+use num::Integer;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #[derive(Debug)]
