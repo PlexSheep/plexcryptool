@@ -10,7 +10,7 @@
 /// License:    MIT
 /// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 
-use crate::cplex;
+use crate::cplex::printing::seperator;
 
 #[test]
 fn test_modred() {
@@ -26,7 +26,7 @@ pub fn modred(mut poly: u64, relation: u64, verbose: bool) -> Result<u64, String
     if verbose {
         println!("relation:\t{:#x}\t", relation);
         println!("polynomial:\t{:#x}\t", poly);
-        println!("{:=<120}", '=');
+        seperator();
     }
     if relation > poly {
         if verbose {

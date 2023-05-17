@@ -7,3 +7,4 @@
 /// License:    MIT
 /// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 pub mod printing;
+pub mod cli;

@@ -8,6 +8,8 @@
 /// License:    MIT
 /// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 
+use crate::cplex::cli::Cli;
+
 use std::fmt::{Debug, LowerHex};
 
 use num::Integer;

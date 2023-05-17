@@ -1,18 +1,29 @@
+/// command line options
+///
+/// this module contains structs and enums that are used to parse command line arguments.
+///
+/// Author:     Christoph J. Scherr <software@cscherr.de>
+/// License:    MIT
+/// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
+///
+use clap::{Args, Parser, Subcommand};
+use clap_num::maybe_hex;
+
 /// This is just structures for parsing Cli args
 #[derive(Parser, Debug, Clone)]
 #[clap(name="plexcryptool", author="Christoph J. Scherr", version, about="Various tools for use with math and cryptology, includes executable and a library.")]
 pub struct Cli {
     /// Which submodule to use
     #[command(subcommand)]
-    command: Commands,
+    pub command: Commands,
 
     /// Machine output
     #[arg(short, long, default_value_t = false, global = true)]
-    machine: bool,
+    pub machine: bool,
 
     /// Verbose output
     #[arg(short, long, default_value_t = false, global = true)]
-    verbose: bool,
+    pub verbose: bool,
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -28,19 +39,19 @@ pub enum Commands {
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 pub struct MathCommand {
     #[command(subcommand)]
-    action: MathActions
+    pub action: MathActions
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 pub struct BinaryCommand {
     #[command(subcommand)]
-    action: BinaryActions
+    pub action: BinaryActions
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 pub struct AlgoCommand {
     #[command(subcommand)]
-    action: AlgoActions
+    pub action: AlgoActions
 }
 
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
@@ -53,25 +64,25 @@ pub enum MathActions {
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 pub struct ModexpArgs {
-    base: String,
-    exp: String,
-    field: String
+    pub base: String,
+    pub exp: String,
+    pub field: String
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 pub struct ModredArgs {
     #[clap(value_parser=maybe_hex::<u64>)]
-    polynomial: u64,
+    pub polynomial: u64,
     #[clap(value_parser=maybe_hex::<u64>)]
-    relation: u64,
+    pub relation: u64,
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 pub struct PM1Args {
     #[clap(value_parser=maybe_hex::<u128>)]
-    n: u128,
+    pub n: u128,
     #[clap(value_parser=maybe_hex::<u128>)]
-    max_prime: u128,
+    pub max_prime: u128,
 }
 
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
@@ -85,19 +96,19 @@ pub enum BinaryActions {
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 pub struct RotateArgs {
     #[arg(short, long, default_value_t = false)]
-    left: bool,
+    pub left: bool,
     #[clap(value_parser=maybe_hex::<u32>)]
-    base: u32,
+    pub base: u32,
     #[clap(value_parser=maybe_hex::<u32>)]
-    shift_width: u32,
+    pub shift_width: u32,
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 pub struct XorArgs {
     #[clap(value_parser=maybe_hex::<u128>)]
-    a: u128,
+    pub a: u128,
     #[clap(value_parser=maybe_hex::<u128>)]
-    b: u128,
+    pub b: u128,
 }
 
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
@@ -113,23 +124,23 @@ pub enum AlgoActions {
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 pub struct Feistel0InnerArgs {
     #[clap(value_parser=maybe_hex::<u16>)]
-    input: u16,
+    pub input: u16,
     #[clap(value_parser=maybe_hex::<u16>)]
-    key: u16,
+    pub key: u16,
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 pub struct Feistel0SBOXArgs {
     #[clap(value_parser=maybe_hex::<u8>)]
-    index: u8,
+    pub index: u8,
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 pub struct Feistel0Args{
     #[clap(value_parser=maybe_hex::<u32>)]
-    input: u32,
+    pub input: u32,
     #[clap(value_parser=maybe_hex::<u32>)]
-    key: u32,
+    pub key: u32,
     #[arg(short, long, default_value_t = false)]
-    decrypt: bool,
+    pub decrypt: bool,
 }
