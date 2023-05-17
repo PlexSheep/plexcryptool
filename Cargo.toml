@@ -1,7 +1,15 @@
 [package]
 name = "plexcryptool"
+authors = ["Christoph J. Scherr <software@cscherr.de>"]
 version = "0.2.4"
 edition = "2021"
+readme = "README.md"
+description = "Various tools for use with math and cryptology, includes executable and a library."
+homepage = "https://git.cscherr.de/PlexSheep/plexcryptool/"
+repository = "https://git.cscherr.de/PlexSheep/plexcryptool/"
+license = "MIT"
+license-file = "LICENSE"
+keywords = ["cryptology", "pyo3", "library", "dhbw"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
