@@ -10,7 +10,6 @@ repository = "https://git.cscherr.de/PlexSheep/plexcryptool/"
 license = "MIT"
 keywords = ["cryptology", "pyo3", "library", "dhbw"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "plexcryptool"
 crate-type = ["cdylib"]

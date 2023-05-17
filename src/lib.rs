@@ -59,7 +59,7 @@ fn register_math_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
 #[pymodule]
 fn register_algo_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let algo_module = PyModule::new(py, "algo")?;
-    let feistel0_module = PyModule::new(py, "algo")?;
+    let feistel0_module = PyModule::new(py, "feistel0")?;
     feistel0_module.add_function(wrap_pyfunction!(algo::feistel0::encrypt, feistel0_module)?)?;
     feistel0_module.add_function(wrap_pyfunction!(algo::feistel0::decrypt, feistel0_module)?)?;
     feistel0_module.add_function(wrap_pyfunction!(algo::feistel0::sbox, feistel0_module)?)?;
