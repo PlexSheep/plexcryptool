@@ -19,6 +19,8 @@ It boils down to the following steps:
 - install the module with pip: `pip install target/wheels/plexcryptool-X.X.X-cp311-cp311-manylinux_2_34_x86_64.whl`
 - compile the plexcryptool executable using `cargo run --release` or install it to your system with `cargo install --path  .`
 
+Alternatively, you can use the install.sh script to install both the executable and python (pip) package to your system.
+
 Thats it!
 
 # License
