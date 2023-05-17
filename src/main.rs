@@ -34,14 +34,11 @@ use num_bigint;
 /// This function is the entrypoint of the binary. It parses Commandline options and calls the
 /// internal functions with the corresponding values, then shows the results to the user.
 pub fn main() {
-    //let b = <Box<Cli> as CommandFactory>::command();
-    //dbg!(b.get_author());
-    //return;
     let args = Cli::parse();
-    if args.verbose {
-        cplex::printing::seperator();
-    }
     match args.clone().command {
+        Commands::Version => {
+            cplex::printing::version();
+        }
         Commands::Math(action) => {
             match action.action {
                 MathActions::Modexp(mod_exp_args) => {

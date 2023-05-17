@@ -9,6 +9,7 @@
 use clap::{Args, Parser, Subcommand};
 use clap_num::maybe_hex;
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
 /// This is just structures for parsing Cli args
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about)] // Read from `Cargo.toml`
@@ -38,6 +39,8 @@ pub enum Commands {
     Binary(BinaryCommand),
     /// Use custom algorithms
     Algo(AlgoCommand),
+    /// Print version
+    Version,
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
