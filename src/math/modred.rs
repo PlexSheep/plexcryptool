@@ -12,6 +12,8 @@
 
 use crate::cplex::printing::seperator;
 
+use pyo3::{prelude::*, exceptions::PyException};
+
 #[test]
 fn test_modred() {
     let rel: u64 = 0x1053;
@@ -19,6 +21,9 @@ fn test_modred() {
     assert_eq!(modred(pol0, rel, false).unwrap(), 0x21e);
 }
 
+/// modular reduction of a polynomial with a given relation
+///
+/// (the function uses the integer representations)
 pub fn modred(mut poly: u64, relation: u64, verbose: bool) -> Result<u64, String> {
 
     let mut diffrence: u32;
@@ -43,4 +48,19 @@ pub fn modred(mut poly: u64, relation: u64, verbose: bool) -> Result<u64, String
         index += 1;
     }
     return Ok(poly);
+}
+
+#[pyfunction]
+#[pyo3(name="mordred")]
+/// python wrapper for modred
+pub fn py_modred(poly: u64, relation: u64, verbose: bool) -> PyResult<u64> {
+    let res = modred(poly, relation, verbose);
+    match res {
+        Ok(n) => {
+            return Ok(n);
+        }
+        Err(e) => {
+            return Err(PyException::new_err(e));
+        }
+    }
 }

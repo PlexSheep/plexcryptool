@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-/// common functionality
+/// common functionality for printing
 ///
 /// Implements code that might be used by many other modules
 ///
