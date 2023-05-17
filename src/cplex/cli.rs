@@ -11,7 +11,10 @@ use clap_num::maybe_hex;
 
 /// This is just structures for parsing Cli args
 #[derive(Parser, Debug, Clone)]
-#[clap(name="plexcryptool", author="Christoph J. Scherr", version, about="Various tools for use with math and cryptology, includes executable and a library.")]
+#[command(author, version, about, long_about)] // Read from `Cargo.toml`
+#[command(
+    help_template = "{about-section}\n\t{name} {version}\n\tAuthor: {author-with-newline}\n{usage-heading} {usage} \n {all-args} {tab}"
+)]
 pub struct Cli {
     /// Which submodule to use
     #[command(subcommand)]
@@ -27,6 +30,7 @@ pub struct Cli {
 }
 
 #[derive(Subcommand, Debug, Clone)]
+#[command(author, version, about, long_about = None)] // Read from `Cargo.toml`
 pub enum Commands {
     /// Use math functions
     Math(MathCommand),
