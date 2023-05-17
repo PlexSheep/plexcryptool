@@ -9,3 +9,4 @@
 pub mod modexp;
 pub mod pm1;
 pub mod modred;
+pub mod gallois;

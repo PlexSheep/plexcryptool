@@ -68,6 +68,19 @@ pub fn modular_exponentiation(
     return res;
 }
 
+/// quick wrapper for modular_exponentiation without BigInts
+pub fn modular_exponentiation_wrapper(
+    base: u128,
+    exp: u128, 
+    field: u128,
+    verbose: bool) -> u128 {
+    
+    let base = BigInt::from(base);
+    let exp = BigInt::from(exp);
+    let field = BigInt::from(field);
+    return modular_exponentiation(base, exp, field, verbose).to_u128().expect("number too big");
+}
+
 #[pyfunction]
 #[pyo3(name="modular_exponentiation")]
 #[pyo3(signature=(base, orig_exp, field, verbose = false))]
