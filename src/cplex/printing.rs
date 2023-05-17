@@ -12,18 +12,30 @@ use crate::cplex::cli::Cli;
 
 use std::fmt::{Debug, LowerHex};
 
+use pyo3::prelude::*;
+
 use clap::CommandFactory;
 use num::Integer;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-/// print the version
+#[pyfunction]
+/// Print version
 pub fn version() {
     let b = <Box<Cli> as CommandFactory>::command();
     println!("{} {}", b.get_name(), b.get_version().unwrap());
     return;
 }
 
+#[pyfunction]
+/// Print about
+pub fn about() {
+    let b = <Box<Cli> as CommandFactory>::command();
+    println!("{}", b.get_about().unwrap());
+    return;
+}
+
+#[pyfunction]
 /// print a seperator
 pub fn seperator() {
     println!("{:=<120}", '=');

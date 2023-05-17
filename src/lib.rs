@@ -36,6 +36,18 @@ fn register_binary_module(py: Python, parent_module: &PyModule) -> PyResult<()> 
 }
 
 #[pymodule]
+fn register_cplex_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
+    let cplex_module = PyModule::new(py, "cplex")?;
+    let printing_module = PyModule::new(py, "printing")?;
+    printing_module.add_function(wrap_pyfunction!(cplex::printing::seperator, printing_module)?)?;
+    printing_module.add_function(wrap_pyfunction!(cplex::printing::version, printing_module)?)?;
+    printing_module.add_function(wrap_pyfunction!(cplex::printing::about, printing_module)?)?;
+    cplex_module.add_submodule(printing_module)?;
+    parent_module.add_submodule(cplex_module)?;
+    Ok(())
+}
+
+#[pymodule]
 fn register_math_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let math_module = PyModule::new(py, "math")?;
     math_module.add_function(wrap_pyfunction!(math::modexp::py_modular_exponentiation, math_module)?)?;
@@ -47,10 +59,12 @@ fn register_math_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
 #[pymodule]
 fn register_algo_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
     let algo_module = PyModule::new(py, "algo")?;
-    algo_module.add_function(wrap_pyfunction!(algo::feistel0::encrypt, algo_module)?)?;
-    algo_module.add_function(wrap_pyfunction!(algo::feistel0::decrypt, algo_module)?)?;
-    algo_module.add_function(wrap_pyfunction!(algo::feistel0::sbox, algo_module)?)?;
-    algo_module.add_function(wrap_pyfunction!(algo::feistel0::key_scheduler, algo_module)?)?;
+    let feistel0_module = PyModule::new(py, "algo")?;
+    feistel0_module.add_function(wrap_pyfunction!(algo::feistel0::encrypt, feistel0_module)?)?;
+    feistel0_module.add_function(wrap_pyfunction!(algo::feistel0::decrypt, feistel0_module)?)?;
+    feistel0_module.add_function(wrap_pyfunction!(algo::feistel0::sbox, feistel0_module)?)?;
+    feistel0_module.add_function(wrap_pyfunction!(algo::feistel0::key_scheduler, feistel0_module)?)?;
+    algo_module.add_submodule(feistel0_module)?;
     parent_module.add_submodule(algo_module)?;
     Ok(())
 }
@@ -60,5 +74,7 @@ fn register_algo_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
 fn plexcryptool(py: Python, m: &PyModule) -> PyResult<()> {
     register_binary_module(py, m)?;
     register_math_module(py, m)?;
+    register_cplex_module(py, m)?;
+    register_algo_module(py, m)?;
     Ok(())
 }
