@@ -64,9 +64,14 @@ pub struct AlgoCommand {
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
 pub enum MathActions {
     #[command(name="modexp")]
+    /// perform exponentiation with a constant modulo applied
     Modexp(ModexpArgs),
+    /// perform modular reduction
     Modred(ModredArgs),
+    /// p minus 1 prime test
     Pm1(PM1Args),
+    //// calculate in a gallois field
+    Gallois(GalloisAction),
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
@@ -90,6 +95,41 @@ pub struct PM1Args {
     pub n: u128,
     #[clap(value_parser=maybe_hex::<u128>)]
     pub max_prime: u128,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct GalloisAction {
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub field: u128,
+    #[command(subcommand)]
+    pub action: GalloisActions
+}
+
+#[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
+pub enum GalloisActions {
+    /// draw the root of n
+    Sqrt(GalloisSqrtArgs),
+    /// reduce n to the range of the field
+    Reduce(GalloisReduceArgs),
+    /// calculate the (multiplicative) inverse of n
+    Invert(GalloisInvertArgs),
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct GalloisSqrtArgs {
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub n: u128,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct GalloisReduceArgs {
+    pub n: i128,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct GalloisInvertArgs {
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub n: u128,
 }
 
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]

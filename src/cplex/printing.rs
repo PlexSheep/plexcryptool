@@ -10,7 +10,7 @@
 
 use crate::cplex::cli::Cli;
 
-use std::fmt::{Debug, LowerHex};
+use std::fmt::{Debug, LowerHex, Display};
 
 use pyo3::prelude::*;
 
@@ -48,11 +48,13 @@ pub fn seperator() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// process a result with some int
-pub fn proc_result<T>(result: Result<T, String>, args: Cli)
+pub fn proc_result<T, K>(result: Result<T, K>, args: Cli)
     where
     T: Debug,
     T: Integer,
-    T: LowerHex
+    T: LowerHex,
+    T: Display,
+    K: Debug
 {
     if args.verbose {
         seperator();
@@ -60,11 +62,11 @@ pub fn proc_result<T>(result: Result<T, String>, args: Cli)
     match result {
         Ok(res) => {
             if args.machine {
-                println!("{:#x}", res);
+                println!("{} ({:#x})", res, res);
             }
             else {
                 seperator();
-                println!("result is {:#x}", res);
+                println!("result is {} ({:#x})", res, res);
             }
         }
         Err(e) => {
@@ -84,17 +86,18 @@ pub fn proc_num<T>(num: T, args: Cli)
     where
     T: Debug,
     T: Integer,
-    T: LowerHex
+    T: LowerHex,
+    T: Display,
 {
     if args.verbose {
         seperator();
     }
-    if args.machine {
-        println!("{:#x}", num);
-    }
-    else {
-        seperator();
-        println!("result is {:#x}", num);
+            if args.machine {
+                println!("{} ({:#x})", num, num);
+            }
+            else {
+                seperator();
+                println!("result is {} ({:#x})", num, num);
     }
 }
 
@@ -116,9 +119,10 @@ pub fn proc_vec<T>(vec: Vec<T>, args: Cli)
 }
 
 /// process a result with some vec
-pub fn proc_result_vec<T>(res: Result<Vec<T>, String>, args: Cli)
+pub fn proc_result_vec<T, K>(res: Result<Vec<T>, K>, args: Cli)
     where
     T: Debug,
+    K: Debug
 {
     if args.verbose {
         seperator();

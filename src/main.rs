@@ -60,6 +60,23 @@ pub fn main() {
                         );
                     cplex::printing::proc_result_vec(vec, args);
                 }
+                MathActions::Gallois(gal_args) => {
+                    let field = math::gallois::GalloisFiled::new(gal_args.field, args.verbose);
+                    match gal_args.action {
+                        GalloisActions::Sqrt(gal_sqrt_args) => {
+                            let result = field.sqrt(gal_sqrt_args.n);
+                            cplex::printing::proc_result(result, args);
+                        }
+                        GalloisActions::Reduce(gal_red_args) => {
+                            let result = field.reduce_neg(gal_red_args.n);
+                            cplex::printing::proc_num(result, args);
+                        }
+                        GalloisActions::Invert(gal_inv_args) => {
+                            let result = field.inverse(gal_inv_args.n);
+                            cplex::printing::proc_result(result, args);
+                        }
+                    }
+                }
             }
         }
         Commands::Binary(action) => {

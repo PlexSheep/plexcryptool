@@ -56,7 +56,7 @@ pub struct GalloisFiled {
 impl GalloisFiled {
     /// make a new gallois field
     pub fn new(base: u128, verbose: bool) -> Self {
-        let mut field = GalloisFiled{
+        let field = GalloisFiled{
             base,
             // TODO: calculate the characteristic
             cha: 0,
@@ -70,14 +70,7 @@ impl GalloisFiled {
 
     /// reduce a number to fit into the gallois field
     pub fn reduce(self, n: u128) -> u128 {
-        let mut n = n;
-        if n < 0 {
-            while n < 0 {
-                n += self.base;
-            }
-        }
-        n %= self.base;
-        return n;
+        return n % self.base;
     }
 
     /// reduce a negative number to fit into the gallois field
@@ -135,6 +128,7 @@ impl GalloisFiled {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #[test]
 fn test_gallois_sqrt() {
+    let field = GalloisFiled::new(67, true);
     panic!("TODO")
 }
 
@@ -149,4 +143,6 @@ fn test_gallois_inverse() {
     assert_eq!(field.inverse(6).unwrap(), 14);
     assert_eq!(field.inverse(54).unwrap(), 20);
     assert!(field.inverse(0).is_err());
+
+    // TODO add a test for a field that has a non prime base
 }
