@@ -196,6 +196,7 @@ impl GalloisFiled {
             for index in 0..l {
                 // l-(i+1)
                 tmp = l - (index+1);
+                tmp = modexp::modular_exponentiation_wrapper(2, tmp, self.base, false);
                 c[index as usize] = a.pow(2u32.pow((self.reduce(l as u128 - (index as u128 + 1)) * t) as u32) as u32) * b.pow(n[index as usize] as u32);
                 if self.verbose {
                     println!("{index}.\tc_{index} = {}", c[index as usize]);
