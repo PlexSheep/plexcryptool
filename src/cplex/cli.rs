@@ -118,7 +118,7 @@ pub enum GalloisActions {
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 pub struct GalloisSqrtArgs {
     #[clap(value_parser=maybe_hex::<u128>)]
-    pub n: u128,
+    pub a: u128,
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
@@ -137,7 +137,11 @@ pub enum BinaryActions {
     /// bit rotation/circular shifting (only 32bit)
     #[command(name="rotate")]
     Rotate(RotateArgs),
-    Xor(XorArgs)
+    /// regular binary xor
+    Xor(XorArgs),
+    /// use a pbox
+    Pbox(PboxArgs),
+
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
@@ -156,6 +160,12 @@ pub struct XorArgs {
     pub a: u128,
     #[clap(value_parser=maybe_hex::<u128>)]
     pub b: u128,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct PboxArgs {
+    #[clap(value_parser=maybe_hex::<u8>)]
+    pub n: u8,
 }
 
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]

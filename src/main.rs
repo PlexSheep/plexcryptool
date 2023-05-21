@@ -50,7 +50,7 @@ pub fn main() {
                 }
                 MathActions::Modred(mod_red_args) => {
                     let result = math::modred::modred(mod_red_args.polynomial, mod_red_args.relation, args.verbose);
-                    cplex::printing::proc_result(result, args);
+                    cplex::printing::proc_result_num(result, args);
                 }
                 MathActions::Pm1(pm1_args) => {
                     let vec: Result<Vec<u128>, String> = math::pm1::p_minus_one(
@@ -64,8 +64,8 @@ pub fn main() {
                     let field = math::gallois::GalloisFiled::new(gal_args.field, args.verbose);
                     match gal_args.action {
                         GalloisActions::Sqrt(gal_sqrt_args) => {
-                            let result = field.sqrt(gal_sqrt_args.n);
-                            cplex::printing::proc_result(result, args);
+                            let result = field.sqrt(gal_sqrt_args.a);
+                            cplex::printing::proc_result_tup_num(result, args);
                         }
                         GalloisActions::Reduce(gal_red_args) => {
                             let result = field.reduce_neg(gal_red_args.n);
@@ -73,7 +73,7 @@ pub fn main() {
                         }
                         GalloisActions::Invert(gal_inv_args) => {
                             let result = field.inverse(gal_inv_args.n);
-                            cplex::printing::proc_result(result, args);
+                            cplex::printing::proc_result_num(result, args);
                         }
                     }
                 }
@@ -93,6 +93,10 @@ pub fn main() {
                 },
                 BinaryActions::Xor(bin_xor_args) => {
                     let result: u128 = binary::xor(bin_xor_args.a, bin_xor_args.b);
+                    cplex::printing::proc_num(result, args);
+                }
+                BinaryActions::Pbox(pbox_args) => {
+                    let result: u8 = binary::pbox6::pbox6(pbox_args.n);
                     cplex::printing::proc_num(result, args);
                 }
             }

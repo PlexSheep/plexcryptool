@@ -7,7 +7,7 @@
 /// License:    MIT
 /// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 
-use crate::math::modexp;
+use crate::{math::modexp, cplex::printing::seperator};
 
 use core::fmt;
 
@@ -63,7 +63,9 @@ impl GalloisFiled {
             verbose
         };
         if verbose {
-            dbg!(&field);
+            seperator();
+            println!("In Gallois Field F_{}", field.base);
+            seperator();
         }
         return field;
     }
@@ -101,8 +103,8 @@ impl GalloisFiled {
             return Err(NoInverseError);
         }
         let egcd = (n as i128).extended_gcd(&(self.base as i128));
-        dbg!(n);
-        return Ok(egcd.x as u128);
+        let egcd = self.reduce(egcd.x as u128);
+        return Ok(egcd);
     }
 
     pub fn divide(self, a: u128, b: u128) -> Result<u128, DivisionByZeroError> {
@@ -119,17 +121,111 @@ impl GalloisFiled {
     }
 
     /// calculate the square root of a number in a field
-    pub fn sqrt(self, n: u128) -> Result<u128, NoRootError> {
-        // TODO implement this
-        panic!("TODO")
+    pub fn sqrt(self, a: u128) -> Result<(u128, u128), NoRootError> {
+        let pm1 = self.base - 1;
+        let pm1_2 = pm1.checked_div(2).expect("Could not divide p-1 by 2");
+        let a_pm1_2 = modexp::modular_exponentiation_wrapper(a, pm1_2, self.base, false);
+        if self.verbose {
+            println!("p-1 = {pm1}\n[p-1]/[2] = {pm1_2}\na**([p-1]/[2]) = {a_pm1_2}");
+        }
+        if a_pm1_2 != 1 {
+            if self.verbose {
+                println!("a**([p-1]/[2]) != 1 => a has no root.");
+            }
+            return Err(NoRootError);
+        }
+
+        // 4 | (p + 1):
+        if 4 % (self.base + 1) == 0 {
+            let w1 = a_pm1_2;
+            let w1 = self.reduce(w1);
+            let w2 = self.a_inverse(w1);
+            if self.verbose {
+                seperator();
+                println!("4 divides p+1");
+                println!("found sqrt of {a} as ({w1}, {w2})");
+            }
+            return Ok((w1, w2));
+        }
+        // 4 !| (p + 1):
+        else {
+            if self.verbose {
+                seperator();
+                println!("4 does not divide p+1");
+                seperator();
+            }
+            let mut l: u128 = 0;
+            let t: u128;
+            loop {
+                if pm1_2.is_multiple_of(&2u128.pow((l+1) as u32)) {
+                    l += 1;
+                }
+                else {
+                    // no more divisible
+                    t = pm1_2.checked_div(2u128.pow(l as u32)).expect("Could not divide by 2**l as calculated");
+                    // t must be odd
+                    assert_eq!(t % 2, 1);
+                    break;
+                }
+            }
+            // chose a b so that b_pm1_2 == -1
+            let mut b: Option<u128> = None;
+            let mut b_pm1_2: u128;
+            for b_candidate in 0..self.base {
+                b_pm1_2 = modexp::modular_exponentiation_wrapper(b_candidate, pm1_2, self.base, false);
+                if self.reduce(b_pm1_2) == self.reduce_neg(-1) {
+                    b = Some(b_candidate);
+                    if self.verbose {
+                        println!("found a b that fits the criteria: {}", b.unwrap());
+                        seperator();
+                    }
+                    break;
+                }
+            }
+            if b.is_none() {
+                if self.verbose {
+                    seperator();
+                    println!("found no fitting b");
+                }
+                return Err(NoRootError);
+            }
+            let b = b.unwrap();
+            let mut n: Vec<u128> = vec![0];
+            let mut c: Vec<u128> = vec![];
+            let mut tmp: u128;
+            for index in 0..l {
+                // l-(i+1)
+                tmp = l - (index+1);
+                c[index as usize] = a.pow(2u32.pow((self.reduce(l as u128 - (index as u128 + 1)) * t) as u32) as u32) * b.pow(n[index as usize] as u32);
+                if self.verbose {
+                    println!("{index}.\tc_{index} = {}", c[index as usize]);
+                }
+                if self.reduce(c[index as usize]) == 1 {
+                    n[(index + 1) as usize] = n[index as usize].checked_div(2).expect("could not compute n[i+1]");
+                }
+                else {
+                    n[(index + 1) as usize] = n[index as usize].checked_div(2).expect("could not compute n[i+1]")
+                        + pm1.checked_div(4).expect("could not compute n[i+1]");
+                }
+            }
+            let w1 = a.pow((t + 1).checked_div(2).expect("could not compute w") as u32) * b.pow(n[l as usize] as u32);
+            let w1 = self.reduce(w1);
+            let w2 = self.a_inverse(w1);
+            if self.verbose {
+                println!("found sqrt of {a} as ({w1}, {w2})");
+            }
+            return Ok((w1, w2));
+        }
     }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #[test]
 fn test_gallois_sqrt() {
-    let field = GalloisFiled::new(67, true);
-    panic!("TODO")
+    let field = GalloisFiled::new(977, false);
+    assert_eq!(field.sqrt(269).expect("function says there is no root but there is"), (313, 474));
+    assert_eq!(field.sqrt(524).expect("function says there is no root but there is"), (115, 862));
+    assert_eq!(field.sqrt(275).expect("function says there is no root but there is"), (585, 392));
 }
 
 #[test]

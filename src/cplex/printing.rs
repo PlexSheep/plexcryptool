@@ -48,7 +48,7 @@ pub fn seperator() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// process a result with some int
-pub fn proc_result<T, K>(result: Result<T, K>, args: Cli)
+pub fn proc_result_num<T, K>(result: Result<T, K>, args: Cli)
     where
     T: Debug,
     T: Integer,
@@ -60,23 +60,11 @@ pub fn proc_result<T, K>(result: Result<T, K>, args: Cli)
         seperator();
     }
     match result {
-        Ok(res) => {
-            if args.machine {
-                println!("{} ({:#x})", res, res);
-            }
-            else {
-                seperator();
-                println!("result is {} ({:#x})", res, res);
-            }
+        Ok(num) => {
+            proc_num(num, args);
         }
         Err(e) => {
-            if args.machine {
-                println!("{:#?}", e)
-            }
-            else {
-                seperator();
-                println!("could not compute:\n{:#?}", e)
-            }
+            proc_err(e, args);
         }
     }
 }
@@ -92,12 +80,52 @@ pub fn proc_num<T>(num: T, args: Cli)
     if args.verbose {
         seperator();
     }
-            if args.machine {
-                println!("{} ({:#x})", num, num);
-            }
-            else {
-                seperator();
-                println!("result is {} ({:#x})", num, num);
+    if args.machine {
+        println!("{} ({:#x})", num, num);
+    }
+    else {
+        println!("result is {} ({:#x})", num, num);
+    }
+}
+
+/// process some int tuple
+pub fn proc_result_tup_num<T, K>(result: Result<(T, T), K>, args: Cli)
+    where
+    T: Debug,
+    T: Integer,
+    T: LowerHex,
+    T: Display,
+    K: Debug
+{
+    if args.verbose {
+        seperator();
+    }
+    match result {
+        Ok(tup) => {
+            proc_tup_num(tup, args);
+        }
+        Err(e) => {
+            proc_err(e, args);
+        }
+    }
+}
+
+/// process some int tuple result
+pub fn proc_tup_num<T>(num: (T, T), args: Cli)
+    where
+    T: Debug,
+    T: Integer,
+    T: LowerHex,
+    T: Display,
+{
+    if args.verbose {
+        seperator();
+    }
+    if args.machine {
+        println!("({}{}) (({:#x}, {:#x})", num.0, num.1, num.0, num.1);
+    }
+    else {
+        println!("result is ({}{}) (({:#x}, {:#x})", num.0, num.1, num.0, num.1);
     }
 }
 
@@ -113,7 +141,6 @@ pub fn proc_vec<T>(vec: Vec<T>, args: Cli)
         println!("{:#?}", vec);
     }
     else {
-        seperator();
         println!("result is\n{:#?}", vec);
     }
 }
@@ -129,22 +156,23 @@ pub fn proc_result_vec<T, K>(res: Result<Vec<T>, K>, args: Cli)
     }
     match res {
         Ok(vec) => {
-            if args.machine {
-                println!("{:#?}", vec);
-            }
-            else {
-                seperator();
-                println!("result is {:#?}", vec);
-            }
+            proc_vec(vec, args);
         }
         Err(e) => {
-            if args.machine {
-                println!("{:#?}", e)
-            }
-            else {
-                seperator();
-                println!("could not compute:\n{:#?}", e)
-            }
+            proc_err(e, args);
         }
+    }
+}
+
+/// process some error
+pub fn proc_err<T>(e: T, args: Cli)
+    where
+    T: Debug
+{
+    if args.machine {
+        println!("{:#?}", e)
+    }
+    else {
+        println!("could not compute:\n{:#?}", e)
     }
 }
