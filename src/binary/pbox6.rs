@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 /// # pbox 6
 ///
 /// This module contains a simple 8 bit pbox.
