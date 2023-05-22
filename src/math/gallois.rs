@@ -176,6 +176,7 @@ impl GalloisFiled {
                 if self.reduce(b_pm1_2) == self.reduce_neg(-1) {
                     b = Some(b_candidate);
                     if self.verbose {
+                        println!("b^([p-1]/[2]) = {}^({pm1_2}) = -1 (mod {})", b.unwrap(), self.base);
                         println!("found a b that fits the criteria: {}", b.unwrap());
                         seperator();
                     }
@@ -193,25 +194,101 @@ impl GalloisFiled {
             let mut n: Vec<u128> = vec![0];
             let mut c: Vec<u128> = vec![];
             let mut tmp: u128;
+            if self.verbose {
+                println!("l = {l}\tt = {t}\tb = {b}");
+                println!("let n_0 = 0");
+            }
             for index in 0..l {
+                if self.verbose {
+                    println!("Calculating c_{index}");
+                }
                 // l-(i+1)
                 tmp = l - (index+1);
+                if self.verbose {
+                    println!("{index}.\tl-(i+1) = {l}-({index}+1) = {tmp}");
+                }
                 tmp = modexp::modular_exponentiation_wrapper(2, tmp, self.base, false);
-                c[index as usize] = a.pow(2u32.pow((self.reduce(l as u128 - (index as u128 + 1)) * t) as u32) as u32) * b.pow(n[index as usize] as u32);
+                if self.verbose {
+                    println!("{index}.\t2^[l-(i+1)] = 2^[{l}-({index}+1)] = {tmp}");
+                }
+                tmp *= t;
+                if self.verbose {
+                    println!("{index}.\t2^[l-(i+1)]*t = 2^[{l}-({index}+1)]*t = {tmp}");
+                }
+                tmp = self.reduce(tmp);
+                if self.verbose {
+                    println!("{index}.\t2^[l-(i+1)]*t = 2^[{l}-({index}+1)]*t = {tmp} (mod {})", self.base);
+                }
+                // multiplication with overflow vvvvvvvvvvvvvv
+                tmp = modexp::modular_exponentiation_wrapper(a, tmp, self.base, false);
+                if self.verbose {
+                    println!("{index}.\ta^(2^[l-(i+1)]*t) = {a}^(2^[{l}-({index}+1)]*t) = {tmp}");
+                }
+                tmp *= modexp::modular_exponentiation_wrapper(b, n[index as usize], self.base, false);
+                tmp = self.reduce(tmp);
+                if self.verbose {
+                    println!("{index}.\ta^(2^[l-(i+1)]*t) * b^(n_{index}) = {a}^(2^[{l}-({index}+1)]*{t}) * {b}^({}) = {tmp} (mod {})", 
+                             n[index as usize],
+                             self.base
+                             );
+                }
+                c.push(tmp);
                 if self.verbose {
                     println!("{index}.\tc_{index} = {}", c[index as usize]);
+                    println!("Calculating n_{}", index + 1);
                 }
-                if self.reduce(c[index as usize]) == 1 {
-                    n[(index + 1) as usize] = n[index as usize].checked_div(2).expect("could not compute n[i+1]");
+                if c[index as usize] == 1 {
+                    if self.verbose {
+                        println!("{index}.\tc_{index} = 1 => n_{} = [n_{index}]/[2]", index + 1);
+                    }
+                    n.push(n[index as usize].checked_div(2).expect("could not compute n[i+1]"));
+                    if self.verbose {
+                        println!("{index}.\tn_{} = [n_{index} / 2] = [{}]/[2] = {}", 
+                                 index + 1, 
+                                 n[index as usize], 
+                                 n[index as usize]
+                                 );
+                    }
                 }
                 else {
-                    n[(index + 1) as usize] = n[index as usize].checked_div(2).expect("could not compute n[i+1]")
-                        + pm1.checked_div(4).expect("could not compute n[i+1]");
+                    if self.verbose {
+                        println!("{index}.\tc_{index} != 1 => n_{} = [n_{index}]/[2] + [p-1]/[4]", index + 1);
+                    }
+                    let mut tmp: u128 = n[index as usize].checked_div(2).expect("could not compute n[i+1]");
+                    tmp += pm1.checked_div(4).expect("could not compute n[i+1]");
+                    n.push(tmp);
+                    assert_eq!(n.last().unwrap(), &tmp);
+                    if self.verbose {
+                        println!("{index}.\tn_{} = [n_{index} / 2] + [p-1]/[4] = [{}]/[2] + [{pm1}]/[4] = {}", 
+                                 index + 1, 
+                                 n[index as usize], 
+                                 n.last().unwrap()
+                                 );
+                    }
                 }
             }
-            let w1 = a.pow((t + 1).checked_div(2).expect("could not compute w") as u32) * b.pow(n[l as usize] as u32);
-            let w1 = self.reduce(w1);
+            let exp = (t+1).checked_div(2).expect("cant divide to int");
+            let mut w1: u128 = modexp::modular_exponentiation_wrapper(a, exp, self.base, false);
+            if self.verbose {
+                seperator();
+                println!("a^([t+1]/[2]) = {w1}");
+            }
+            w1 *= modexp::modular_exponentiation_wrapper(b, n[l as usize], self.base, false);
+            if self.verbose {
+                println!("w_1 = [a^(t+1)]/[2] * b^(n_l) = [{a}^([{t}+1])]/[2] * {b}^{} = {}", n[l as usize], w1);
+            }
+            w1 = self.reduce(w1);
+            if self.verbose {
+                println!("w_1 = [a^(t+1)]/[2] * b^(n_l) = [{a}^([{t}+1])]/[2] * {b}^{} = {} (mod {})", 
+                       n[l as usize], 
+                       w1, 
+                       self.base
+                       );
+            }
             let w2 = self.a_inverse(w1);
+            if self.verbose {
+                println!("w_2 = -w_1 = -{w1} = {w2} (mod {})", self.base);
+            }
             if self.verbose {
                 println!("found sqrt of {a} as ({w1}, {w2})");
             }
@@ -223,8 +300,8 @@ impl GalloisFiled {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #[test]
 fn test_gallois_sqrt() {
-    let field = GalloisFiled::new(977, false);
-    assert_eq!(field.sqrt(269).expect("function says there is no root but there is"), (313, 474));
+    let field = GalloisFiled::new(977, true);
+    assert_eq!(field.sqrt(269).expect("function says there is no root but there is"), (313, 664));
     assert_eq!(field.sqrt(524).expect("function says there is no root but there is"), (115, 862));
     assert_eq!(field.sqrt(275).expect("function says there is no root but there is"), (585, 392));
 }

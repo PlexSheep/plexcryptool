@@ -32,6 +32,9 @@ pub fn modular_exponentiation(
     if verbose {
         println!("args:\nbase {base}\nexp {exp}\nfield {field}\nverbose {verbose}");
     }
+    if exp == BigInt::from(0) {
+        return BigInt::from(1);
+    }
     let mut instructions: Vec<bool> = bigint_to_bools(exp.clone());
     // remove the signing bit
 

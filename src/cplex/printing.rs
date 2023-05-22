@@ -122,10 +122,10 @@ pub fn proc_tup_num<T>(num: (T, T), args: Cli)
         seperator();
     }
     if args.machine {
-        println!("({}{}) (({:#x}, {:#x})", num.0, num.1, num.0, num.1);
+        println!("({}, {}) (({:#x}, {:#x})", num.0, num.1, num.0, num.1);
     }
     else {
-        println!("result is ({}{}) (({:#x}, {:#x})", num.0, num.1, num.0, num.1);
+        println!("result is ({}, {}) (({:#x}, {:#x})", num.0, num.1, num.0, num.1);
     }
 }
 
