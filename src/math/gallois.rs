@@ -13,6 +13,8 @@ use core::fmt;
 
 use num::Integer;
 
+use pyo3::prelude::*;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #[derive(Debug)]
 /// used when trying to find a root for a number which does not have a root.
@@ -45,6 +47,7 @@ impl fmt::Display for NoRootError {
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #[derive(Debug, Copy, Clone)]
+#[pyclass]
 /// represent a gallois field
 pub struct GalloisFiled {
     base: u128,
@@ -295,6 +298,25 @@ impl GalloisFiled {
             return Ok((w1, w2));
         }
     }
+}
+
+#[pymethods]
+/// python wrappers for the gallois field
+impl GalloisFiled {
+    #[new]
+    pub fn py_new(base: u128, verbose: bool) -> Self {
+        return GalloisFiled::new(base, verbose);
+    }
+    
+    #[pyo3(name="reduce")]
+    /// reduce any int
+    pub fn py_reduce(&self, n: i128) -> u128 {
+        if n.is_negative() {
+            return self.reduce_neg(n);
+        }
+        return self.reduce(n as u128);
+    }
+    // TODO implement wrappers for all other gallois methods
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
