@@ -138,10 +138,10 @@ pub fn proc_vec<T>(vec: Vec<T>, args: Cli)
         seperator();
     }
     if args.machine {
-        println!("{:#?}", vec);
+        println!("{:?}", vec);
     }
     else {
-        println!("result is\n{:#?}", vec);
+        println!("result is\n{:?}", vec);
     }
 }
 

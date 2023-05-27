@@ -77,6 +77,20 @@ pub fn main() {
                         }
                     }
                 }
+                MathActions::Factorize(fac_args) => {
+                    let vec = math::factorise::prime_factors(fac_args.n, args.verbose);
+                    cplex::printing::proc_vec(vec, args);
+                }
+                MathActions::Gcd(gcd_args) => {
+                    if gcd_args.ext {
+                        let vec = math::gcd::egcd(gcd_args.a, gcd_args.b);
+                        cplex::printing::proc_vec(vec, args)
+                    }
+                    else {
+                        let num = math::gcd::gcd(gcd_args.a, gcd_args.b);
+                        cplex::printing::proc_num(num, args)
+                    }
+                }
             }
         }
         Commands::Binary(action) => {

@@ -70,8 +70,12 @@ pub enum MathActions {
     Modred(ModredArgs),
     /// p minus 1 prime test
     Pm1(PM1Args),
-    //// calculate in a gallois field
+    /// calculate in a gallois field
     Gallois(GalloisAction),
+    /// Euklidian Algorithm
+    Gcd(GcdArgs),
+    /// factorize a natural number
+    Factorize(FactorizeArgs)
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
@@ -103,6 +107,25 @@ pub struct GalloisAction {
     pub field: u128,
     #[command(subcommand)]
     pub action: GalloisActions
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct GcdArgs {
+    #[clap(value_parser=maybe_hex::<u128>)]
+    /// first number
+    pub a: u128,
+    #[clap(value_parser=maybe_hex::<u128>)]
+    /// second number
+    pub b: u128,
+    #[arg(short, long, default_value_t = false)]
+    /// use extended gcd
+    pub ext: bool
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct FactorizeArgs {
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub n: u128,
 }
 
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
