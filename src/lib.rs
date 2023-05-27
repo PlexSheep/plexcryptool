@@ -55,6 +55,7 @@ fn register_math_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
     math_module.add_function(wrap_pyfunction!(math::gcd::gcd, math_module)?)?;
     math_module.add_function(wrap_pyfunction!(math::gcd::egcd, math_module)?)?;
     math_module.add_function(wrap_pyfunction!(math::factorise::prime_factors , math_module)?)?;
+    math_module.add_class::<math::gallois::GalloisFiled>()?;
     parent_module.add_submodule(math_module)?;
     Ok(())
 }

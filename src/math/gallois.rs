@@ -13,7 +13,7 @@ use core::fmt;
 
 use num::Integer;
 
-use pyo3::prelude::*;
+use pyo3::{prelude::*, exceptions::PyValueError};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #[derive(Debug)]
@@ -307,6 +307,12 @@ impl GalloisFiled {
     pub fn py_new(base: u128, verbose: bool) -> Self {
         return GalloisFiled::new(base, verbose);
     }
+
+    #[pyo3(name="pow")]
+    /// calculate the exponent of a base in the field
+    pub fn py_pow(&self, base: u128, exp: u128) -> u128 {
+        return self.pow(base, exp);
+    }
     
     #[pyo3(name="reduce")]
     /// reduce any int
@@ -316,7 +322,36 @@ impl GalloisFiled {
         }
         return self.reduce(n as u128);
     }
-    // TODO implement wrappers for all other gallois methods
+
+    #[pyo3(name="a_inverse")]
+    /// find the additive inverse of a number
+    pub fn py_a_inverse(&self, n: u128) -> u128 {
+        return self.a_inverse(n)
+    }
+
+    #[pyo3(name="sqrt")]
+    /// calculate the square root of a number in a field
+    pub fn py_sqrt(&self, a: u128) -> PyResult<(u128, u128)> {
+        match self.sqrt(a) {
+            Ok(v) => Ok(v),
+            Err(e) => {
+                let py_e = PyValueError::new_err(e.to_string());
+                return Err(py_e)
+            }
+        }
+    }
+
+    #[pyo3(name="inverse")]
+    /// get multiplicative inverse
+    pub fn py_inverse(&self, n: u128) -> PyResult<u128> {
+        match self.inverse(n) {
+            Ok(v) => Ok(v),
+            Err(e) => {
+                let py_e = PyValueError::new_err(e.to_string());
+                return Err(py_e)
+            }
+        }
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
