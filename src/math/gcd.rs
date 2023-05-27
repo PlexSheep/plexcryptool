@@ -24,6 +24,32 @@ pub fn egcd(mut a: u128, mut b: u128) -> Vec<i128> {
 }
 
 #[pyfunction]
+/// own implementation of egcd
+pub fn alt_egcd(mut a: i128, mut b: i128, recursion: bool) -> Vec<i128> {
+    if recursion && a > b {
+        let tmp = a;
+        a = b;
+        b = tmp;
+    }
+    if a == 0 {
+        return vec![b, 0, 1]
+    }
+    let v = alt_egcd(b % a, a, true);
+    let mut result =  vec![
+        v[0], 
+        v[2] - (b.checked_div(a).unwrap()) * v[1], 
+        v[1],
+    ];
+    return result;
+}
+
+#[test]
+fn test_alt_gcd() {
+    assert_eq!(egcd(12193, 123213), alt_egcd(12193, 123213, false));
+    assert_eq!(egcd(52193, 123212), alt_egcd(52193, 123212, false));
+}
+
+#[pyfunction]
 /// euclidian algorithm
 pub fn gcd(a: u128, b: u128) -> u128 {
     a.gcd(&b)

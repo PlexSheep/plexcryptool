@@ -375,5 +375,10 @@ fn test_gallois_inverse() {
     assert_eq!(field.inverse(54).unwrap(), 20);
     assert!(field.inverse(0).is_err());
 
+    let field = GalloisFiled::new(1151, true);
+    assert_eq!(field.inverse(6).unwrap(), 14);
+    assert_eq!(field.inverse(54).unwrap(), 20);
+    assert!(field.inverse(0).is_err());
+
     // TODO add a test for a field that has a non prime base
 }
