@@ -12,3 +12,4 @@ pub mod modred;
 pub mod gallois;
 pub mod gcd;
 pub mod factorise;
+pub mod ecc;

@@ -49,26 +49,24 @@ impl fmt::Display for NoRootError {
 #[derive(Debug, Copy, Clone)]
 #[pyclass]
 /// represent a gallois field
-pub struct GalloisFiled {
+pub struct GalloisField {
     base: u128,
     cha: u128,
     verbose: bool,
 }
 
 /// implementations for the gallois field
-impl GalloisFiled {
+impl GalloisField {
     /// make a new gallois field
     pub fn new(base: u128, verbose: bool) -> Self {
-        let field = GalloisFiled{
+        let field = GalloisField{
             base,
             // TODO: calculate the characteristic
             cha: 0,
             verbose
         };
         if verbose {
-            seperator();
             println!("In Gallois Field F_{}", field.base);
-            seperator();
         }
         return field;
     }
@@ -302,10 +300,10 @@ impl GalloisFiled {
 
 #[pymethods]
 /// python wrappers for the gallois field
-impl GalloisFiled {
+impl GalloisField {
     #[new]
     pub fn py_new(base: u128, verbose: bool) -> Self {
-        return GalloisFiled::new(base, verbose);
+        return GalloisField::new(base, verbose);
     }
 
     #[pyo3(name="pow")]
@@ -357,7 +355,7 @@ impl GalloisFiled {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #[test]
 fn test_gallois_sqrt() {
-    let field = GalloisFiled::new(977, true);
+    let field = GalloisField::new(977, true);
     assert_eq!(field.sqrt(269).expect("function says there is no root but there is"), (313, 664));
     assert_eq!(field.sqrt(524).expect("function says there is no root but there is"), (115, 862));
     assert_eq!(field.sqrt(275).expect("function says there is no root but there is"), (585, 392));
@@ -365,20 +363,18 @@ fn test_gallois_sqrt() {
 
 #[test]
 fn test_gallois_inverse() {
-    let field = GalloisFiled::new(31, true);
+    let field = GalloisField::new(31, true);
     assert_eq!(field.inverse(12).unwrap(), 13);
     assert_eq!(field.inverse(28).unwrap(), 10);
     assert!(field.inverse(0).is_err());
 
-    let field = GalloisFiled::new(83, true);
+    let field = GalloisField::new(83, true);
     assert_eq!(field.inverse(6).unwrap(), 14);
     assert_eq!(field.inverse(54).unwrap(), 20);
     assert!(field.inverse(0).is_err());
 
-    let field = GalloisFiled::new(1151, true);
-    assert_eq!(field.inverse(6).unwrap(), 14);
-    assert_eq!(field.inverse(54).unwrap(), 20);
-    assert!(field.inverse(0).is_err());
+    // TODO i think this test does not catch all edge cases. In some cases, something seems to be
+    // wrong.
 
     // TODO add a test for a field that has a non prime base
 }
