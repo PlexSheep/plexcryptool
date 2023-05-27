@@ -19,9 +19,9 @@ pub fn prime_factors(mut n: u128, verbose: bool) -> Vec<u128> {
         else {
             n = n.checked_div(i).expect("n / i is not an integer");
             factors.push(i);
-        }
-        if verbose {
-            println!("i={i}\t{:?}", factors);
+            if verbose {
+                println!("i={i}\t{:?}", factors);
+            }
         }
     }
     if n > 1 {
