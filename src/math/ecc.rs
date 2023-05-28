@@ -26,16 +26,16 @@ pub const INFINITY_POINT: ElipticCurvePoint = ElipticCurvePoint {
 ///
 /// real curves not supported, only in Gallois Fields
 pub struct ElipticCurve {
-    f: Option<GalloisField>,
+    f: GalloisField,
     a: i128,
     b: i128,
     points: Vec<ElipticCurvePoint>,
     verbose: bool,
-    INFINITY_POINT: ElipticCurvePoint
+    INFINITY_POINT: ElipticCurvePoint,
 }
 
 impl ElipticCurve {
-    pub fn new(f: Option<GalloisField>, a: i128, b: i128, verbose: bool) -> Self {
+    pub fn new(f: GalloisField, a: i128, b: i128, verbose: bool) -> Self {
         let e = ElipticCurve {
             f,
             a,
@@ -47,6 +47,7 @@ impl ElipticCurve {
         return e;
     }
 }
+
 
 #[derive(Debug, Clone)]
 #[pyclass]

@@ -2,6 +2,12 @@
 /// calculation in a gallois field
 ///
 /// This module contains functions that can be used to calculate things in a gallois field
+/// TODO I'm not sure how accurate it is to call this stuff a gallois field.
+/// They should normally be based on some relation and not use numbers?
+/// It does also not even come close to statisfying the characteristic of prime powers q = p^k.as
+/// base => p = 0
+///
+/// Something is wrong here.
 ///
 /// Author:     Christoph J. Scherr <software@cscherr.de>
 /// License:    MIT
@@ -14,6 +20,8 @@ use core::fmt;
 use num::Integer;
 
 use pyo3::{prelude::*, exceptions::PyValueError};
+
+use primes::{Sieve, PrimeSet, is_prime};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #[derive(Debug)]
@@ -59,9 +67,8 @@ pub struct GalloisField {
 impl GalloisField {
     /// make a new gallois field
     pub fn new(base: u128, verbose: bool) -> Self {
-        let field = GalloisField{
+        let mut field = GalloisField{
             base,
-            // TODO: calculate the characteristic
             cha: 0,
             verbose
         };
@@ -296,6 +303,25 @@ impl GalloisField {
             return Ok((w1, w2));
         }
     }
+
+    /// calculate the characteristic of the field
+    pub fn calc_char(mut self) -> u128 {
+        if self.verbose {
+            seperator();
+            println!("calculating characteristic of F_{}", self.base);
+            seperator();
+        }
+        let mut i = 1u128;
+        while self.reduce(i) > 0 {
+            if self.verbose {
+                println!("{i}.\t {i} = {} (mod {})", self.reduce(i), self.base)
+            }
+            i += 1;
+        }
+        
+        self.cha = i;
+        return i;
+    }
 }
 
 #[pymethods]
@@ -377,4 +403,14 @@ fn test_gallois_inverse() {
     // wrong.
 
     // TODO add a test for a field that has a non prime base
+}
+
+#[test]
+fn test_calc_char() {
+    assert_eq!(GalloisField::new(16, true).calc_char(), 2);
+    assert_eq!(GalloisField::new(81, true).calc_char(), 81);
+    assert_eq!(GalloisField::new(1151, true).calc_char(), 1151);
+    assert_eq!(GalloisField::new(8, true).calc_char(), 2);
+    assert_eq!(GalloisField::new(2, true).calc_char(), 2);
+    assert_eq!(GalloisField::new(60, true).calc_char(), 3);
 }

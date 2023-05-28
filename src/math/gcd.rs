@@ -35,7 +35,7 @@ pub fn alt_egcd(mut a: i128, mut b: i128, recursion: bool) -> Vec<i128> {
         return vec![b, 0, 1]
     }
     let v = alt_egcd(b % a, a, true);
-    let mut result =  vec![
+    let result =  vec![
         v[0], 
         v[2] - (b.checked_div(a).unwrap()) * v[1], 
         v[1],
