@@ -68,7 +68,7 @@ pub fn main() {
                             cplex::printing::proc_result_tup_num(result, args);
                         }
                         GalloisActions::Reduce(gal_red_args) => {
-                            let result = field.reduce_neg(gal_red_args.n);
+                            let result = field.reduce(gal_red_args.n);
                             cplex::printing::proc_num(result, args);
                         }
                         GalloisActions::Invert(gal_inv_args) => {

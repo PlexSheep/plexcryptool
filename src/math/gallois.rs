@@ -7,7 +7,9 @@
 /// It does also not even come close to statisfying the characteristic of prime powers q = p^k.as
 /// base => p = 0
 ///
-/// Something is wrong here.
+/// GalloisFields with a base that is a prime power have p^k elements, but only p real elements,
+/// the rest are denoted as polynomials with alpha, this makes computation much more complicated.
+/// Therefore, currently, I can only support gallois fields with primes as base.
 ///
 /// Author:     Christoph J. Scherr <software@cscherr.de>
 /// License:    MIT
@@ -16,12 +18,13 @@
 use crate::{math::modexp, cplex::printing::seperator};
 
 use core::fmt;
+use std::{fmt::Debug, ops::{AddAssign, Add}};
 
 use num::Integer;
 
 use pyo3::{prelude::*, exceptions::PyValueError};
 
-use primes::{Sieve, PrimeSet, is_prime};
+use primes::is_prime;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #[derive(Debug)]
@@ -61,17 +64,30 @@ pub struct GalloisField {
     base: u128,
     cha: u128,
     verbose: bool,
+    prime_base: bool
 }
 
 /// implementations for the gallois field
 impl GalloisField {
     /// make a new gallois field
     pub fn new(base: u128, verbose: bool) -> Self {
+        let prime_base: bool = is_prime(base as u64);
+        if !prime_base {
+            println!("Non prime bases for a field are currently not supported. {} is not a prime.", base);
+            panic!("Non prime bases for a field are currently not supported.");
+        }
         let mut field = GalloisField{
             base,
-            cha: 0,
-            verbose
+            cha: base,
+            verbose,
+            prime_base
         };
+        if field.prime_base {
+            field.cha = base;
+        }
+        else {
+            field.calc_char();
+        }
         if verbose {
             println!("In Gallois Field F_{}", field.base);
         }
@@ -79,13 +95,21 @@ impl GalloisField {
     }
 
     /// reduce a number to fit into the gallois field
-    pub fn reduce(self, n: u128) -> u128 {
+    /// only works with u128 as input
+    /// depreciated
+    pub fn reduce_pos(self, n: u128) -> u128 {
         return n % self.base;
     }
 
     /// reduce a negative number to fit into the gallois field
-    pub fn reduce_neg(self, n: i128) -> u128 {
-        let mut n = n;
+    ///
+    /// utilizes generic types to reduce any integer
+    pub fn reduce<T>(self, n: T) -> u128 
+        where
+        T: Integer,
+        T: num::cast::AsPrimitive<i128>
+    {
+        let mut n: i128 = num::cast::AsPrimitive::as_(n);
         if n < 0 {
             while n < 0 {
                 n += self.base as i128;
@@ -181,7 +205,7 @@ impl GalloisField {
             let mut b_pm1_2: u128;
             for b_candidate in 0..self.base {
                 b_pm1_2 = modexp::modular_exponentiation_wrapper(b_candidate, pm1_2, self.base, false);
-                if self.reduce(b_pm1_2) == self.reduce_neg(-1) {
+                if self.reduce(b_pm1_2) == self.reduce(-1) {
                     b = Some(b_candidate);
                     if self.verbose {
                         println!("b^([p-1]/[2]) = {}^({pm1_2}) = -1 (mod {})", b.unwrap(), self.base);
@@ -309,14 +333,15 @@ impl GalloisField {
         if self.verbose {
             seperator();
             println!("calculating characteristic of F_{}", self.base);
-            seperator();
         }
         let mut i = 1u128;
         while self.reduce(i) > 0 {
-            if self.verbose {
-                println!("{i}.\t {i} = {} (mod {})", self.reduce(i), self.base)
-            }
             i += 1;
+        }
+        if self.verbose {
+            println!("{i} = {} (mod {})", self.reduce(i), self.base);
+            println!("Therefore, char(F_{}) = {i}", self.base);
+            seperator();
         }
         
         self.cha = i;
@@ -341,9 +366,9 @@ impl GalloisField {
     #[pyo3(name="reduce")]
     /// reduce any int
     pub fn py_reduce(&self, n: i128) -> u128 {
-        if n.is_negative() {
-            return self.reduce_neg(n);
-        }
+        //if n.is_negative() {
+        //    return self.reduce_neg(n);
+        //}
         return self.reduce(n as u128);
     }
 
@@ -407,10 +432,12 @@ fn test_gallois_inverse() {
 
 #[test]
 fn test_calc_char() {
-    assert_eq!(GalloisField::new(16, true).calc_char(), 2);
-    assert_eq!(GalloisField::new(81, true).calc_char(), 81);
+    assert_eq!(GalloisField::new(83, true).calc_char(), 83);
     assert_eq!(GalloisField::new(1151, true).calc_char(), 1151);
-    assert_eq!(GalloisField::new(8, true).calc_char(), 2);
     assert_eq!(GalloisField::new(2, true).calc_char(), 2);
-    assert_eq!(GalloisField::new(60, true).calc_char(), 3);
+
+    // only primes are supported right now. TODO
+    //assert_eq!(GalloisField::new(8, true).calc_char(), 2);
+    //assert_eq!(GalloisField::new(64, true).calc_char(), 2);
+    //assert_eq!(GalloisField::new(2u128.pow(64u32), true).calc_char(), 2);
 }
