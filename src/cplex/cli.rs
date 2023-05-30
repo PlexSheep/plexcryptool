@@ -87,10 +87,10 @@ pub struct ModexpArgs {
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
 pub struct ModredArgs {
-    #[clap(value_parser=maybe_hex::<u64>)]
-    pub polynomial: u64,
-    #[clap(value_parser=maybe_hex::<u64>)]
-    pub relation: u64,
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub polynomial: u128,
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub relation: u128,
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
@@ -105,6 +105,8 @@ pub struct PM1Args {
 pub struct GalloisAction {
     #[clap(value_parser=maybe_hex::<u128>)]
     pub field: u128,
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub relation: Option<u128>,
     #[command(subcommand)]
     pub action: GalloisActions
 }

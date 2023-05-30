@@ -16,8 +16,8 @@ use pyo3::{prelude::*, exceptions::PyException};
 
 #[test]
 fn test_modred() {
-    let rel: u64 = 0x1053;
-    let pol0: u64 = 0x100001;
+    let rel: u128 = 0x1053;
+    let pol0: u128 = 0x100001;
     assert_eq!(modred(pol0, rel, false).unwrap(), 0x21e);
     // test vectors by our professor
     // IDK why some of these don't work, but I am pretty sure that my algorithm and implementation
@@ -37,7 +37,7 @@ fn test_modred() {
 /// modular reduction of a polynomial with a given relation
 ///
 /// (the function uses the integer representations)
-pub fn modred(mut poly: u64, relation: u64, verbose: bool) -> Result<u64, String> {
+pub fn modred(mut poly: u128, relation: u128, verbose: bool) -> Result<u128, String> {
 
     let mut diffrence: u32;
     let mut index: usize = 0;
@@ -66,7 +66,7 @@ pub fn modred(mut poly: u64, relation: u64, verbose: bool) -> Result<u64, String
 #[pyfunction]
 #[pyo3(name="mordred")]
 /// python wrapper for modred
-pub fn py_modred(poly: u64, relation: u64, verbose: bool) -> PyResult<u64> {
+pub fn py_modred(poly: u128, relation: u128, verbose: bool) -> PyResult<u128> {
     let res = modred(poly, relation, verbose);
     match res {
         Ok(n) => {

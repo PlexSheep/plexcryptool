@@ -61,7 +61,7 @@ pub fn main() {
                     cplex::printing::proc_result_vec(vec, args);
                 }
                 MathActions::Gallois(gal_args) => {
-                    let field = math::gallois::GalloisField::new(gal_args.field, args.verbose);
+                    let field = math::gallois::GalloisField::new(gal_args.field, args.verbose, gal_args.relation);
                     match gal_args.action {
                         GalloisActions::Sqrt(gal_sqrt_args) => {
                             let result = field.sqrt(gal_sqrt_args.a);

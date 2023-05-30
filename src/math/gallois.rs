@@ -15,7 +15,7 @@
 /// License:    MIT
 /// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 
-use crate::{math::modexp, cplex::printing::seperator};
+use crate::{math::modexp, cplex::printing::seperator, math::modred::modred};
 
 use core::fmt;
 
@@ -63,23 +63,25 @@ pub struct GalloisField {
     base: u128,
     cha: u128,
     verbose: bool,
-    prime_base: bool
+    prime_base: bool,
+    relation: Option<u128>
 }
 
 /// implementations for the gallois field
 impl GalloisField {
     /// make a new gallois field
-    pub fn new(base: u128, verbose: bool) -> Self {
+    pub fn new(base: u128, verbose: bool, relation: Option<u128>) -> Self {
         let prime_base: bool = is_prime(base as u64);
         if !prime_base {
-            println!("Non prime bases for a field are currently not supported. {} is not a prime.", base);
-            panic!("Non prime bases for a field are currently not supported.");
+            println!("Non prime bases for a field are currently very experimental.\n
+                     Use them at your own risk! ({} is not a prime.)", base);
         }
         let mut field = GalloisField{
             base,
             cha: base,
             verbose,
-            prime_base
+            prime_base,
+            relation
         };
         if field.prime_base {
             field.cha = base;
@@ -109,13 +111,21 @@ impl GalloisField {
         T: num::cast::AsPrimitive<i128>
     {
         let mut n: i128 = num::cast::AsPrimitive::as_(n);
-        if n < 0 {
-            while n < 0 {
-                n += self.base as i128;
+        if self.prime_base {
+            if n < 0 {
+                while n < 0 {
+                    n += self.base as i128;
+                }
             }
+            n %= self.base as i128;
+            return n as u128;
         }
-        n %= self.base as i128;
-        return n as u128;
+        else {
+            if n < 0 {
+                panic!("reduction for negative numbers not implemented.");
+            }
+            modred(n as u128, self.relation.unwrap(), self.verbose).expect("modular reduction didn't work")
+        }
     }
 
     /// calculate the exponent of a base in the field
@@ -352,8 +362,8 @@ impl GalloisField {
 /// python wrappers for the gallois field
 impl GalloisField {
     #[new]
-    pub fn py_new(base: u128, verbose: bool) -> Self {
-        return GalloisField::new(base, verbose);
+    pub fn py_new(base: u128, verbose: bool, relation: Option<u128>) -> Self {
+        return GalloisField::new(base, verbose, relation);
     }
 
     #[pyo3(name="pow")]
@@ -405,7 +415,7 @@ impl GalloisField {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #[test]
 fn test_gallois_sqrt() {
-    let field = GalloisField::new(977, true);
+    let field = GalloisField::new(977, true, None);
     assert_eq!(field.sqrt(269).expect("function says there is no root but there is"), (313, 664));
     assert_eq!(field.sqrt(524).expect("function says there is no root but there is"), (115, 862));
     assert_eq!(field.sqrt(275).expect("function says there is no root but there is"), (585, 392));
@@ -413,17 +423,17 @@ fn test_gallois_sqrt() {
 
 #[test]
 fn test_gallois_inverse() {
-    let field = GalloisField::new(31, true);
+    let field = GalloisField::new(31, true, None);
     assert_eq!(field.inverse(12).unwrap(), 13);
     assert_eq!(field.inverse(28).unwrap(), 10);
     assert!(field.inverse(0).is_err());
 
-    let field = GalloisField::new(83, true);
+    let field = GalloisField::new(83, true, None);
     assert_eq!(field.inverse(6).unwrap(), 14);
     assert_eq!(field.inverse(54).unwrap(), 20);
     assert!(field.inverse(0).is_err());
 
-    let field = GalloisField::new(23, true);
+    let field = GalloisField::new(23, true, None);
     assert_eq!(field.inverse(17).unwrap(), 19);
     assert_eq!(field.inverse(7).unwrap(), 10);
     assert!(field.inverse(0).is_err());
@@ -436,9 +446,9 @@ fn test_gallois_inverse() {
 
 #[test]
 fn test_calc_char() {
-    assert_eq!(GalloisField::new(83, true).calc_char(), 83);
-    assert_eq!(GalloisField::new(1151, true).calc_char(), 1151);
-    assert_eq!(GalloisField::new(2, true).calc_char(), 2);
+    assert_eq!(GalloisField::new(83, true, None).calc_char(), 83);
+    assert_eq!(GalloisField::new(1151, true, None).calc_char(), 1151);
+    assert_eq!(GalloisField::new(2, true, None).calc_char(), 2);
 
     // only primes are supported right now. TODO
     //assert_eq!(GalloisField::new(8, true).calc_char(), 2);
