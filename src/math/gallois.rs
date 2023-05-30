@@ -18,7 +18,6 @@
 use crate::{math::modexp, cplex::printing::seperator};
 
 use core::fmt;
-use std::{fmt::Debug, ops::{AddAssign, Add}};
 
 use num::Integer;
 
@@ -394,7 +393,7 @@ impl GalloisField {
     /// get multiplicative inverse
     pub fn py_inverse(&self, n: u128) -> PyResult<u128> {
         match self.inverse(n) {
-            Ok(v) => Ok(v),
+            Ok(v) => {return Ok(v)},
             Err(e) => {
                 let py_e = PyValueError::new_err(e.to_string());
                 return Err(py_e)
@@ -422,6 +421,11 @@ fn test_gallois_inverse() {
     let field = GalloisField::new(83, true);
     assert_eq!(field.inverse(6).unwrap(), 14);
     assert_eq!(field.inverse(54).unwrap(), 20);
+    assert!(field.inverse(0).is_err());
+
+    let field = GalloisField::new(23, true);
+    assert_eq!(field.inverse(17).unwrap(), 19);
+    assert_eq!(field.inverse(7).unwrap(), 10);
     assert!(field.inverse(0).is_err());
 
     // TODO i think this test does not catch all edge cases. In some cases, something seems to be

@@ -1,7 +1,8 @@
 #![allow(dead_code)]
 /// eliptic curve cryptography
 ///
-/// This module implements structs and functionalities used for ECC.
+/// This module implements structs and functionalities used for eliptic curve cryptography (ECC).
+/// Do not expect it to actually be secure, I made this for cryptography lectures.
 ///
 /// Author:     Christoph J. Scherr <software@cscherr.de>
 /// License:    MIT
