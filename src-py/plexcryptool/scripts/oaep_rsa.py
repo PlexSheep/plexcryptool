@@ -123,7 +123,7 @@ def test_rsa_oaep_inner():
 
 def rsa_oaep_noenc(ha: bytearray, m: bytearray, verbose: bool, seed: int = random.randint(0, 2**64 - 1)):
     """
-    rsa-oeap without encryption
+    rsa-oaep without encryption
     """
     # generate a seed
     assert calclen(seed) == 8, "seed is wrong length: %d" % calclen(seed)
@@ -170,7 +170,7 @@ def rsa_oaep(
         seed: int = random.randint(0, 2**64 - 1)
         ) -> bytearray:
     """
-    rsa-oeap with encryption
+    rsa-oaep with encryption
     """
     r: bytearray = rsa_oaep_noenc(ha, m, verbose, seed)
     ri = int.from_bytes(r, 'big')
