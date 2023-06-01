@@ -47,8 +47,13 @@ GIVEN_OAEP = bytearray.fromhex("""
 c8956e78ec1c721370663065cbc343deabad9eb6f2aceab6bfed5bea
 6543aa3672cddf915c5b564848f4e6ec
 """)
-
-SEED_LENGTH = 8 # bytes
+GIVEN_C = bytearray.fromhex("""
+1b57819fa11340ac8b1843c87db7adb126daa8b6dde1feefd7af721c
+ee8f46b6e2c361fc04ac055406a342187388b019dba0bc3f6503f267
+b848f7cc86b29a3d0b32730ccf04c5a8a3e1255708cbc6a6a648015e
+30f38b1c1c7aa9d2b0e67a775c7ad1cb72ff76c000af46e7cada3c3b
+45b5f4d1ec8e0596928cc9b46ee2b53d
+""")
 
 def mgf1(seed: bytearray, length: int, hash_func=hashlib.sha256) -> bytearray:
     """
@@ -116,7 +121,10 @@ def test_rsa_oaep_inner():
     assert result[0] == GIVEN_MASKED_SEED, "is\n%s\ninstead of\n%s" % (result[0].hex(), GIVEN_MASKED_SEED.hex())
     assert result[1] == GIVEN_MASKED_DB, "is\n%s\ninstead of\n%s" % (result[1].hex(), GIVEN_MASKED_DB.hex())
 
-def rsa_oaep(ha: bytearray, m: bytearray, verbose: bool, seed: int = random.randint(0, 2**64 - 1)):
+def rsa_oaep_noenc(ha: bytearray, m: bytearray, verbose: bool, seed: int = random.randint(0, 2**64 - 1)):
+    """
+    rsa-oeap without encryption
+    """
     # generate a seed
     assert calclen(seed) == 8, "seed is wrong length: %d" % calclen(seed)
     l_seed: bytearray = bytearray(seed.to_bytes(calclen(seed), 'big'))
@@ -135,9 +143,8 @@ def rsa_oaep(ha: bytearray, m: bytearray, verbose: bool, seed: int = random.rand
     assert len(block) == maxlen
     if verbose:
         print("block:\n%s" % block.hex())
-    # in this case
-    assert block == GIVEN_DB, "is\n%s\ninstead of\n%s" % (block.hex(), GIVEN_DB.hex())
     assert type(l_seed) == bytearray
+    # do the inner function
     result = rsa_oaep_inner(seed=l_seed, block=block, verbose=verbose)
     if verbose:
         print()
@@ -146,11 +153,29 @@ def rsa_oaep(ha: bytearray, m: bytearray, verbose: bool, seed: int = random.rand
         print()
     return bytearray(1) + result[0] + result[1]
 
+def test_rsa_oaep_noenc():
+    r = rsa_oaep_noenc(bytearray(0), GIVEN_MSG, True, GIVEN_SEED)
+    assert r == GIVEN_OAEP
+    print(r.hex())
+
 def test_rsa_oaep():
     r = rsa_oaep(bytearray(0), GIVEN_MSG, True, GIVEN_SEED)
-    assert r == GIVEN_OAEP
-    print(r)
+    assert r == GIVEN_C
+    print(r.hex())
 
+def rsa_oaep(
+        ha: bytearray, 
+        m: bytearray, 
+        verbose: bool, 
+        seed: int = random.randint(0, 2**64 - 1)
+        ) -> bytearray:
+    """
+    rsa-oeap with encryption
+    """
+    r: bytearray = rsa_oaep_noenc(ha, m, verbose, seed)
+    ri = int.from_bytes(r, 'big')
+    c = pow(ri, GIVEN_PUB_KEY[1], GIVEN_PUB_KEY[0])
+    return bytearray(c.to_bytes(calclen(c), 'big'))
 
 def main():
     parser = argparse.ArgumentParser(prog="oaep-rsa", description='A hacky Implementation of rsa-oaep')
@@ -169,8 +194,9 @@ def main():
     args = parser.parse_args()
 
     if args.test:
-        test_rsa_oaep()
         test_rsa_oaep_inner()
+        test_rsa_oaep_noenc()
+        test_rsa_oaep()
         exit()
     if args.hashed_data:
         ha = bytearray.fromhex(args.hashed_data)
