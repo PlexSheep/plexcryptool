@@ -26,6 +26,12 @@ use pyo3::{prelude::*, exceptions::PyValueError};
 use primes::is_prime;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+pub const F_8_DEFAULT_RELATION: u128 = 0xb; 
+pub const F_16_DEFAULT_RELATION: u128 = 0x13; 
+pub const F_256_DEFAULT_RELATION: u128 = 0x11b; 
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 #[derive(Debug)]
 /// used when trying to find a root for a number which does not have a root.
 pub struct NoInverseError;
@@ -70,11 +76,28 @@ pub struct GalloisField {
 /// implementations for the gallois field
 impl GalloisField {
     /// make a new gallois field
-    pub fn new(base: u128, verbose: bool, relation: Option<u128>) -> Self {
+    pub fn new(base: u128, verbose: bool, mut relation: Option<u128>) -> Self {
         let prime_base: bool = is_prime(base as u64);
         if !prime_base {
-            println!("Non prime bases for a field are currently very experimental.\n
-                     Use them at your own risk! ({} is not a prime.)", base);
+            println!("Non prime bases for a field are currently very experimental.\nUse them at your own risk! ({} is not a prime.)", base);
+            if relation.is_none() {
+                // TODO choose common relations for known fields
+
+                match base {
+                    8 => {
+                        relation = Some(F_8_DEFAULT_RELATION);
+                    }
+                    16 => {
+                        relation = Some(F_16_DEFAULT_RELATION);
+                    }
+                    256 => {
+                        relation = Some(F_256_DEFAULT_RELATION);
+                    }
+                    _ => {
+                        panic!("You did not specify a relation and none could be found.");
+                    }
+                }
+            }
         }
         let mut field = GalloisField{
             base,
@@ -124,7 +147,7 @@ impl GalloisField {
             if n < 0 {
                 panic!("reduction for negative numbers not implemented.");
             }
-            modred(n as u128, self.relation.unwrap(), self.verbose).expect("modular reduction didn't work")
+            modred(n as u128, self.relation.unwrap(), false).expect("modular reduction didn't work")
         }
     }
 
@@ -422,6 +445,16 @@ fn test_gallois_sqrt() {
 }
 
 #[test]
+fn test_gallois_reduce() {
+    let field = GalloisField::new(977, true, None);
+    for i in 0..976 {
+        assert_eq!(field.reduce(i), i);
+    }
+
+    let field = GalloisField::new(16, true, None);
+}
+
+#[test]
 fn test_gallois_inverse() {
     let field = GalloisField::new(31, true, None);
     assert_eq!(field.inverse(12).unwrap(), 13);
@@ -438,10 +471,10 @@ fn test_gallois_inverse() {
     assert_eq!(field.inverse(7).unwrap(), 10);
     assert!(field.inverse(0).is_err());
 
-    // TODO i think this test does not catch all edge cases. In some cases, something seems to be
-    // wrong.
-
     // TODO add a test for a field that has a non prime base
+    let field = GalloisField::new(16, true, None);
+    assert_eq!(field.inverse(0x130).unwrap(), 0);
+    assert!(field.inverse(0).is_err());
 }
 
 #[test]
@@ -450,8 +483,8 @@ fn test_calc_char() {
     assert_eq!(GalloisField::new(1151, true, None).calc_char(), 1151);
     assert_eq!(GalloisField::new(2, true, None).calc_char(), 2);
 
-    // only primes are supported right now. TODO
-    //assert_eq!(GalloisField::new(8, true).calc_char(), 2);
-    //assert_eq!(GalloisField::new(64, true).calc_char(), 2);
-    //assert_eq!(GalloisField::new(2u128.pow(64u32), true).calc_char(), 2);
+    // experimental
+    assert_eq!(GalloisField::new(8, true, None).calc_char(), 2);
+    assert_eq!(GalloisField::new(64, true, None).calc_char(), 2);
+    //assert_eq!(GalloisField::new(2u128.pow(64u32), true, None).calc_char(), 2);
 }

@@ -68,7 +68,7 @@ impl ElipticCurve {
 
 #[test]
 fn test_check_point() {
-    let f = GalloisField::new(1151, true);
+    let f = GalloisField::new(1151, true, None);
     let ec = ElipticCurve::new(f, 1, 679, true);
     // real points
     let p = vec![

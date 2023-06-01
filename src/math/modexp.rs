@@ -159,5 +159,4 @@ fn dump_bin(bytes: &Vec<u8>) {
         print!("{:08b}", byte);
     }
     println!();
-
 }
