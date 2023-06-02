@@ -79,7 +79,7 @@ def mgf1(seed: bytearray, length: int, hash_func=hashlib.sha256) -> bytearray:
     # 4.Output the leading l octets of T as the octet string mask.
     return bytearray(T[:length])
 
-def byte_xor(ba0: bytearray, ba1: bytearray):
+def byte_xor(ba0: bytearray, ba1: bytearray) -> bytearray:
     """
     helper function for bytewise xor
     """
@@ -203,7 +203,8 @@ def main():
     else:
         ha = bytearray(0)
     if args.message:
-        m = bytearray.fromhex(args.message)
+        m = bytearray(str.encode(args.message))
+        print("msg: %s" % m.hex())
     else:
         m = bytearray.fromhex("466f6f62617220313233343536373839")
     if args.seed:
