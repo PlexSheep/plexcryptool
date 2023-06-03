@@ -15,7 +15,7 @@
 /// License:    MIT
 /// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 
-use crate::{math::modexp, cplex::printing::seperator, math::modred::modred};
+use crate::{math::modexp::{self, modular_exponentiation_wrapper}, cplex::printing::seperator, math::modred::modred};
 
 use core::fmt;
 
@@ -378,6 +378,19 @@ impl GalloisField {
         
         self.cha = i;
         return i;
+    }
+
+    /// calculate the order of a element
+    pub fn calc_ord(self, n: u128) -> Option<u128> {
+        if n == 0 {
+            return None;
+        }
+        for ord in 2..self.base {
+            if self.pow(n, ord) == 1 {
+                return Some(ord);
+            }
+        }
+        panic!("No order was found, but n is not 0 and all possibilities have been tried");
     }
 }
 
