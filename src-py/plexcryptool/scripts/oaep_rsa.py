@@ -4,7 +4,7 @@ Perform RSA-OAEP
 
 @author: Christoph J. Scherr <software@cscherr.de>
 @license: MIT
-@source: https://git.cscherr.de/PlexSheep/plexcryptool/src/branch/master/plexcryptool/trash-hash.py
+@source: https://git.cscherr.de/PlexSheep/plexcryptool/
 """
 
 import argparse

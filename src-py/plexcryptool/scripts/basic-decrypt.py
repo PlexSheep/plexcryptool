@@ -5,7 +5,7 @@ you also need the chiffrat.txt file in the same directory.
 
 @license: MIT
 @author: Christoph J. Scherr <software@cscherr.de>
-@source: https://git.cscherr.de/PlexSheep/plexcryptool/src/branch/master/plexcryptool/basic-decrypt.py
+@source: https://git.cscherr.de/PlexSheep/plexcryptool/
 """
 MAX_IN_LINE = 16
 DE_MOST_COMMON = ['E', 'N', 'I', 'R', 'A']

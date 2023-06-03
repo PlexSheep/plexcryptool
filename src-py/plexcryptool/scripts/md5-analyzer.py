@@ -4,8 +4,7 @@ A small script to help analyze the md5 hash function.
 
 @author: Christoph J. Scherr <software@cscherr.de>
 @license: MIT
-@source: https://git.cscherr.de/PlexSheep/plexcryptool/src/branch/master/plexcryptool/md5-analyzer.py
-TODO do I need to implement md5 by myself for the assignment?
+@source: https://git.cscherr.de/PlexSheep/plexcryptool/
 """
 import argparse
 import hashlib

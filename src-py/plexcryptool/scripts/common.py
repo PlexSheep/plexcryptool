@@ -7,6 +7,7 @@ Common tools that may be used by many
 """
 
 from math import floor
+from typing import Literal
 
 def byte_xor(ba0: bytearray, ba1: bytearray) -> bytearray:
     """
@@ -27,3 +28,19 @@ def calc_byte_len(n: int) -> int:
         return 1 + floor(len)
     else: 
         return floor(len)
+
+def int_to_bytearray(n: int, size: int|None = None, endianness = 'big') -> bytearray:
+    """
+    convert an integer to a bytearray
+
+    you can specify a size if you want, if the number is too big an Exception will be raised.
+    size is in bytes
+    """
+    brepr: bytes = n.to_bytes(calc_byte_len(n), endianness)
+    ba: bytearray = bytearray(brepr)
+    if size is not None and len(ba) > size:
+        raise Exception("Number is larger than requested")
+    while size is not None and size > len(ba):
+        ba: bytearray = bytearray(1) + ba
+
+    return ba
