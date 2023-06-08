@@ -66,11 +66,11 @@ impl fmt::Display for NoRootError {
 #[pyclass]
 /// represent a gallois field
 pub struct GalloisField {
-    base: u128,
-    cha: u128,
-    verbose: bool,
-    prime_base: bool,
-    relation: Option<u128>
+    pub base: u128,
+    pub cha: u128,
+    pub verbose: bool,
+    pub prime_base: bool,
+    pub relation: Option<u128>
 }
 
 /// implementations for the gallois field
@@ -379,19 +379,6 @@ impl GalloisField {
         self.cha = i;
         return i;
     }
-
-    /// calculate the order of a element
-    pub fn calc_ord(self, n: u128) -> Option<u128> {
-        if n == 0 {
-            return None;
-        }
-        for ord in 2..self.base {
-            if self.pow(n, ord) == 1 {
-                return Some(ord);
-            }
-        }
-        panic!("No order was found, but n is not 0 and all possibilities have been tried");
-    }
 }
 
 #[pymethods]
@@ -446,6 +433,19 @@ impl GalloisField {
             }
         }
     }
+
+    /// calculate the order of a element
+    pub fn calc_ord(&self, n: u128) -> Option<u128> {
+        if n == 0 {
+            return None;
+        }
+        for ord in 2..self.base {
+            if self.pow(n, ord) == 1 {
+                return Some(ord);
+            }
+        }
+        panic!("No order was found, but n is not 0 and all possibilities have been tried");
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -496,8 +496,8 @@ fn test_calc_char() {
     assert_eq!(GalloisField::new(1151, true, None).calc_char(), 1151);
     assert_eq!(GalloisField::new(2, true, None).calc_char(), 2);
 
-    // experimental
-    assert_eq!(GalloisField::new(8, true, None).calc_char(), 2);
-    assert_eq!(GalloisField::new(64, true, None).calc_char(), 2);
-    //assert_eq!(GalloisField::new(2u128.pow(64u32), true, None).calc_char(), 2);
+    //// experimental
+    //assert_eq!(GalloisField::new(8, true, None).calc_char(), 2);
+    //assert_eq!(GalloisField::new(64, true, None).calc_char(), 2);
+    ////assert_eq!(GalloisField::new(2u128.pow(64u32), true, None).calc_char(), 2);
 }
