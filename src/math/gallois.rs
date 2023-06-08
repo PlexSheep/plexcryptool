@@ -15,12 +15,12 @@
 /// License:    MIT
 /// Source:     <https://git.cscherr.de/PlexSheep/plexcryptool/>
 
-use crate::{math::modexp::{self, modular_exponentiation_wrapper}, cplex::printing::seperator, math::modred::modred};
+use crate::{math::modexp, cplex::printing::seperator, math::modred::modred};
 
 use core::fmt;
 use std::fmt::Debug;
 
-use num::{Integer, NumCast, Signed, Unsigned};
+use num::{Integer, NumCast};
 
 use pyo3::{prelude::*, exceptions::PyValueError};
 
@@ -391,6 +391,7 @@ impl GalloisField {
         self.cha = i;
         return i;
     }
+
 }
 
 #[pymethods]
@@ -458,6 +459,20 @@ impl GalloisField {
         }
         panic!("No order was found, but n is not 0 and all possibilities have been tried");
     }
+
+    fn __str__(&self) -> PyResult<String>   {
+        Ok(format!("{}", self))
+    }
+
+    fn __repr__(&self) -> PyResult<String> {
+        Ok(format!("{}", self))
+    }
+}
+
+impl std::fmt::Display for GalloisField {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "F_{}", self.base)
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -482,7 +497,7 @@ pub mod test {
             assert_eq!(field.reduce::<_, u128>(i as u128), i);
         }
 
-        let field = GalloisField::new(16, true, None);
+        let _ = GalloisField::new(16, true, None);
     }
 
 	#[test]
