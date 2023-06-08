@@ -18,8 +18,9 @@
 use crate::{math::modexp::{self, modular_exponentiation_wrapper}, cplex::printing::seperator, math::modred::modred};
 
 use core::fmt;
+use std::fmt::Debug;
 
-use num::Integer;
+use num::{Integer, NumCast, Signed, Unsigned};
 
 use pyo3::{prelude::*, exceptions::PyValueError};
 
@@ -130,12 +131,18 @@ impl GalloisField {
     /// reduce a negative number to fit into the gallois field
     ///
     /// utilizes generic types to reduce any integer
-    pub fn reduce<T>(self, n: T) -> u128 
+    pub fn reduce<T, K>(self, n: T) -> K
         where
         T: Integer,
-        T: num::cast::AsPrimitive<i128>
+        T: NumCast,
+        T: Debug,
+        K: Unsigned,
+        K: Integer,
+        K: NumCast,
+        K: Debug,
     {
-        let mut n: i128 = num::cast::AsPrimitive::as_(n);
+        dbg!(&n);
+        let mut n: i128 = num::cast(n).unwrap();
         if self.prime_base {
             if n < 0 {
                 while n < 0 {
@@ -143,13 +150,16 @@ impl GalloisField {
                 }
             }
             n %= self.base as i128;
-            return n as u128;
+            let n: K = num::cast(n).unwrap();
+            return n;
         }
         else {
             if n < 0 {
                 panic!("reduction for negative numbers not implemented.");
             }
-            modred(n as u128, self.relation.unwrap(), false).expect("modular reduction didn't work")
+            let n = modred(n as u128, self.relation.unwrap(), false).expect("modular reduction didn't work");
+            let n: K = num::cast(n).unwrap();
+            return n;
         }
     }
 
@@ -160,16 +170,17 @@ impl GalloisField {
 
     /// find the additive inverse of a number
     pub fn a_inverse(self, n: u128) -> u128 {
-        return self.base - self.reduce(n);
+        return self.base - self.reduce::<_, u128>(n);
     }
 
     /// find the multiplicative inverse of a number
     pub fn inverse(self, n: u128) -> Result<u128, NoInverseError> {
+        dbg!(&n);
         if n == 0 {
             return Err(NoInverseError);
         }
         let egcd = (n as i128).extended_gcd(&(self.base as i128));
-        let egcd = self.reduce(egcd.x as u128);
+        let egcd = self.reduce(egcd.x);
         return Ok(egcd);
     }
 
@@ -239,7 +250,7 @@ impl GalloisField {
             let mut b_pm1_2: u128;
             for b_candidate in 0..self.base {
                 b_pm1_2 = modexp::modular_exponentiation_wrapper(b_candidate, pm1_2, self.base, false);
-                if self.reduce(b_pm1_2) == self.reduce(-1) {
+                if self.reduce::<_, u128>(b_pm1_2) == self.reduce::<_, u128>(-1) {
                     b = Some(b_candidate);
                     if self.verbose {
                         println!("b^([p-1]/[2]) = {}^({pm1_2}) = -1 (mod {})", b.unwrap(), self.base);
@@ -369,11 +380,11 @@ impl GalloisField {
             println!("calculating characteristic of F_{}", self.base);
         }
         let mut i = 1u128;
-        while self.reduce(i) > 0 {
+        while self.reduce::<_, u128>(i) > 0 {
             i += 1;
         }
         if self.verbose {
-            println!("{i} = {} (mod {})", self.reduce(i), self.base);
+            println!("{i} = {} (mod {})", self.reduce::<_, u128>(i), self.base);
             println!("Therefore, char(F_{}) = {i}", self.base);
             seperator();
         }
@@ -462,8 +473,8 @@ fn test_gallois_sqrt() {
 #[test]
 fn test_gallois_reduce() {
     let field = GalloisField::new(977, true, None);
-    for i in 0..976 {
-        assert_eq!(field.reduce(i), i);
+    for i in 0..976u128 {
+        assert_eq!(field.reduce::<_, u128>(i as u128), i);
     }
 
     let field = GalloisField::new(16, true, None);
