@@ -62,9 +62,11 @@ impl fmt::Display for NoRootError {
     }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[pyclass]
 /// represent a gallois field
+///
+/// PartialEq and Eq might behave badly when verbosity is not the same FIXME
 pub struct GalloisField {
     pub base: u128,
     pub cha: u128,

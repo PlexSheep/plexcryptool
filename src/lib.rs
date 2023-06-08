@@ -74,6 +74,13 @@ fn register_algo_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
+#[pymodule]
+fn register_scripts_module(py: Python, parent_module: &PyModule) -> PyResult<()> {
+    let scripts_module = PyModule::new(py, "scripts")?;
+    parent_module.add_submodule(scripts_module)?;
+    Ok(())
+}
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn plexcryptool(py: Python, m: &PyModule) -> PyResult<()> {
@@ -81,5 +88,6 @@ fn plexcryptool(py: Python, m: &PyModule) -> PyResult<()> {
     register_math_module(py, m)?;
     register_cplex_module(py, m)?;
     register_algo_module(py, m)?;
+    register_scripts_module(py, m)?;
     Ok(())
 }
