@@ -30,7 +30,21 @@ pub struct ElipticCurve {
 }
 
 impl ElipticCurve {
-    pub fn new(f: GalloisField, a: i128, b: i128, verbose: bool) -> Self {
+    pub fn new(f: GalloisField, a: i128, b: i128, verbose: bool) -> Result<Self, String> {
+        // check diskriminante
+        let d = 4*a.pow(3) + 27*b.pow(2);
+        if f.reduce(d) == 0 {
+            if verbose {
+                println!("4*{a}³ + 27*{b}² = {d} = {} != 0\n\
+                Check for Diskriminante not passed", f.reduce(d));
+            }
+            return Err(String::from("Diskriminante not 0"));
+        }
+        else if verbose {
+                println!("4*{a}³ + 27*{b}² = {d} = {} != 0\n
+                Check for Diskriminante passed", f.reduce(d));
+        }
+
         let mut e = ElipticCurve {
             f,
             a,
@@ -41,67 +55,91 @@ impl ElipticCurve {
         };
         let infty = ElipticCurvePoint::new(0, 0, e.f);
         e.INFINITY_POINT = Some(infty);
-        return e;
+        return Ok(e);
     }
 
     /// calculate a value for coordinates
     pub fn poly<T>(&self, r: T, s: T) -> i128 
-    where
-    T: Integer,
-    T: Mul,
-    T: Debug,
-    T: num::cast::AsPrimitive<i128>,
-    T: Neg
-    {
-        dbg!(&r);
-        dbg!(&s);
-        let r: i128 = num::cast::AsPrimitive::as_(r);
-        let s: i128 = num::cast::AsPrimitive::as_(s);
-        let res =  s.pow(2) - r.pow(3) - (self.a * r) - self.b;
-        let res1 = self.f.reduce(res);
-        if self.verbose {
-            println!("F({}, {}) = {}² - {}³ - {} * {} - {} = {res} = {res1}",
+        where
+        T: Integer,
+        T: Mul,
+        T: Debug,
+        T: num::cast::AsPrimitive<i128>,
+        T: Neg
+        {
+            dbg!(&r);
+            dbg!(&s);
+            let r: i128 = num::cast::AsPrimitive::as_(r);
+            let s: i128 = num::cast::AsPrimitive::as_(s);
+            let res =  s.pow(2) - r.pow(3) - (self.a * r) - self.b;
+            let res1 = self.f.reduce(res);
+            if self.verbose {
+                println!("F({}, {}) = {}² - {}³ - {} * {} - {} = {res} = {res1}",
                 r, s, s, r, self.a, r, self.b
-            );
+                );
+            }
+            return res1 as i128;
         }
-        return res1 as i128;
-    }
 
     pub fn check_point(self, p: ElipticCurvePoint) -> bool {
         let mut valid = true;
-        let res =  self.f.reduce(self.poly(p.r, p.s));
+
+        // insert into poly
+        let left =  self.f.reduce(p.s.pow(2));
+        let right =  self.f.reduce(p.r.pow(3) + self.a*p.r + self.b);
         if self.verbose {
-            println!("F({}, {}) = {}² - {}³ - {} * {} - {} = {res}",
-                p.r, p.s, p.s, p.r, self.a, p.r, self.b
-            )
+            let unred_left = p.s.pow(2);
+            let unred_right = p.r.pow(3) + self.a*p.r + self.b;
+            println!("All Points need to fullfill this equation:\n\
+                    y²\t= x³ + ax + b\n\
+                    {}²\t= {}³ + {}*{} +{}\n\
+                    {unred_left}\t= {unred_right}\n\
+                    {left}\t= {right}\n\
+                    <=> {}\n", 
+                    p.s,
+                    p.r,
+                    self.a,
+                    p.r,
+                    self.b,
+                    left == right
+                    );
         }
-        valid &= res == 0;
+        valid &= left == right;
         return valid;
     }
 }
 
 #[test]
 fn test_check_point() {
-    let f = GalloisField::new(1151, true, None);
-    let ec = ElipticCurve::new(f, 1, 679, true);
+    let f = GalloisField::new(13, true, None);
+    let ec = ElipticCurve::new(f, -3, 3, true).expect("ec cant be created");
     // real points
     let p = vec![
-        ElipticCurvePoint::new(298, 531, f),
-        ElipticCurvePoint::new(600, 127, f),
-        ElipticCurvePoint::new(846, 176, f),
+        ElipticCurvePoint::new(0, 4, f),
+        ElipticCurvePoint::new(0, 9, f),
+        ElipticCurvePoint::new(1, 1, f),
+        ElipticCurvePoint::new(1, 12, f),
+        ElipticCurvePoint::new(4, 4, f),
+        ElipticCurvePoint::new(4, 9, f),
+        ElipticCurvePoint::new(5, 3, f),
+        ElipticCurvePoint::new(5, 10, f),
+        ElipticCurvePoint::new(7, 0, f),
+        ElipticCurvePoint::new(8, 6, f),
+        ElipticCurvePoint::new(9, 4, f),
+        ElipticCurvePoint::new(9, 9, f),
+        ElipticCurvePoint::new(11, 1, f),
+        ElipticCurvePoint::new(11, 12, f),
     ];
     // random values, not part of the e, fc.
     let np = vec![
-        ElipticCurvePoint::new(198, 331, f),
-        ElipticCurvePoint::new(100, 927, f),
-        ElipticCurvePoint::new(446, 876, f),
+        ElipticCurvePoint::new(0, 5, f),
+        ElipticCurvePoint::new(1, 9, f),
+        ElipticCurvePoint::new(1, 4, f),
     ];
     for i in p {
-        dbg!(&i);
         assert!(ec.clone().check_point(i));
     }
     for i in np {
-        dbg!(&i);
         assert!(!ec.clone().check_point(i));
     }
 }
@@ -125,7 +163,7 @@ impl ElipticCurvePoint {
             field
         }
     }
-    
+
     /// add two points
     pub fn add(self, point: Self) -> Result<Self, String> {
         if self.field.cha != point.field.cha {
