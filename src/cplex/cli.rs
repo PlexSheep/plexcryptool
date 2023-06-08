@@ -71,11 +71,12 @@ pub enum MathActions {
     /// p minus 1 prime test
     Pm1(PM1Args),
     /// calculate in a gallois field
+    /// includes Eliptic curves
     Gallois(GalloisAction),
     /// Euklidian Algorithm
     Gcd(GcdArgs),
     /// factorize a natural number
-    Factorize(FactorizeArgs)
+    Factorize(FactorizeArgs),
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
@@ -137,7 +138,9 @@ pub enum GalloisActions {
     /// reduce n to the range of the field
     Reduce(GalloisReduceArgs),
     /// calculate the (multiplicative) inverse of n
-    Invert(GalloisInvertArgs),
+    Inverse(GalloisInverseArgs),
+    /// eliptic curves
+    ECC(ECCAction)
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
@@ -152,9 +155,60 @@ pub struct GalloisReduceArgs {
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
-pub struct GalloisInvertArgs {
+pub struct GalloisInverseArgs {
     #[clap(value_parser=maybe_hex::<u128>)]
     pub n: u128,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct ECCAction {
+    #[clap(allow_hyphen_values=true)]   // allow negative inputs like -19
+    pub a: i128,
+    #[clap(allow_hyphen_values=true)]   // allow negative inputs like -19
+    pub b: i128,
+    #[command(subcommand)]
+    pub action: ECCActions
+}
+
+#[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
+pub enum ECCActions {
+    /// negate a point
+    Neg(ECCNegArgs),
+    /// add a twp poimts
+    Add(ECCAddArgs),
+    /// multiply a point with an integer
+    /// uses double and add
+    Mul(ECCMulArgs),
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct ECCNegArgs {
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub r: u128,
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub s: u128,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct ECCMulArgs {
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub r: u128,
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub s: u128,
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub n: u128,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct ECCAddArgs {
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub r1: u128,
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub s1: u128,
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub r2: u128,
+    #[clap(value_parser=maybe_hex::<u128>)]
+    pub s2: u128,
 }
 
 #[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
@@ -166,7 +220,6 @@ pub enum BinaryActions {
     Xor(XorArgs),
     /// use a pbox
     Pbox(PboxArgs),
-
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]

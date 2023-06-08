@@ -88,6 +88,18 @@ pub fn proc_num<T>(num: T, args: Cli)
     }
 }
 
+pub fn proc_display<T>(item: T, args: Cli)
+    where
+    T: Display,
+{
+    if args.machine {
+        println!("{}", item);
+    }
+    else {
+        println!("result is {}", item);
+    }
+}
+
 /// process some int tuple
 pub fn proc_result_tup_num<T, K>(result: Result<(T, T), K>, args: Cli)
     where

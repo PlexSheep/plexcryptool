@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use std::{ops::{Mul, Neg}, fmt::Debug, f32::consts::PI};
+use crate::cplex::printing::seperator;
 
 /// eliptic curve cryptograp.s
 ///
@@ -12,7 +12,12 @@ use std::{ops::{Mul, Neg}, fmt::Debug, f32::consts::PI};
 
 use super::gallois::GalloisField;
 
-use num::Integer;
+use std::{ops::{Mul, Neg}, fmt::{Debug, Display}, f32::consts::PI};
+
+use num::{Integer, Unsigned, NumCast};
+
+use bitvec::prelude::*;
+
 use pyo3::prelude::*;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -31,30 +36,43 @@ pub struct ElipticCurve {
 }
 
 impl ElipticCurve {
-    pub fn new(field: GalloisField, a: i128, b: i128, verbose: bool) -> Result<Self, String> {
+    pub fn new<T>(field: GalloisField, a: T, b: T, verbose: bool) -> Result<Self, String>
+    where
+        T: Integer,
+        T: Debug,
+        T: num::cast::AsPrimitive<i128>,
+    {
+        // convert from generics to i128
+        let a: i128 = num::cast::AsPrimitive::as_(a);
+        let b: i128 = num::cast::AsPrimitive::as_(b);
 
-        // convert numbers to u128 in the fields
-        let a = field.reduce(a);
-        let b = field.reduce(b);
+        // reduce a and b if possible
+        let a = field.reduce::<_, u128>(a);
+        let b = field.reduce::<_, u128>(b);
+
+        if verbose {
+            println!("On eliptic curve:\n\
+            F(X, Y) = Y² - X³ - {a}X - {b}")
+        }
 
         // check diskriminante
         let d = 4*a.pow(3) + 27*b.pow(2);
-        if field.reduce(d) == 0 {
+        if field.reduce::<_, u128>(d) == 0 {
             if verbose {
                 println!("4*{a}³ + 27*{b}² = {d} = {} != 0\n\
-                Check for Diskriminante not passed", field.reduce(d));
+                Check for Diskriminante not passed", field.reduce::<_, u128>(d));
             }
             return Err(String::from("Diskriminante not 0"));
         }
         else if verbose {
             println!("4*{a}³ + 27*{b}² = {d} = {} != 0\n\
-                Check for Diskriminante passed", field.reduce(d));
+                Check for Diskriminante passed", field.reduce::<_, u128>(d));
         }
 
         let mut infty = ElipticCurvePoint::new(0, 0, field, false);
         infty.is_infinity_point = true;
         let infty = infty;
-        let mut e = ElipticCurve {
+        let e = ElipticCurve {
             field,
             a,
             b,
@@ -63,6 +81,22 @@ impl ElipticCurve {
             INFINITY_POINT: infty
         };
         return Ok(e);
+    }
+
+    /// build a new point in the EC
+    pub fn new_point(&self, r: u128, s: u128) -> Result<ElipticCurvePoint, String> {
+        let p = ElipticCurvePoint::new(r, s, self.field, self.verbose);
+        if self.verbose {
+            println!("{p}")
+        }
+        match self.check_point(p, self.verbose) {
+            true => {
+                return Ok(p);
+            }
+            false => {
+                return Err(String::from("the point you want to create is not on the EC"));
+            }
+        }
     }
 
     /// calculate a value for coordinates
@@ -79,7 +113,7 @@ impl ElipticCurve {
             let r: u128 = num::cast::AsPrimitive::as_(r);
             let s: u128 = num::cast::AsPrimitive::as_(s);
             let res =  (s.pow(2) as u128) - (r.pow(3) as u128) - (self.a * r) - self.b;
-            let res1 = self.field.reduce(res);
+            let res1 = self.field.reduce::<_, u128>(res);
             if self.verbose {
                 println!("F({}, {}) = {}² - {}³ - {} * {} - {} = {res} = {res1}",
                 r, s, s, r, self.a, r, self.b
@@ -88,13 +122,13 @@ impl ElipticCurve {
             return res1 as i128;
         }
 
-    pub fn check_point(self, p: ElipticCurvePoint) -> bool {
+    pub fn check_point(&self, p: ElipticCurvePoint, verbose: bool) -> bool {
         let mut valid = true;
 
         // insert into poly
-        let left =  self.field.reduce(p.s.pow(2));
-        let right =  self.field.reduce((p.r.pow(3) as u128) + self.a*p.r + self.b);
-        if self.verbose {
+        let left =  self.field.reduce::<_, u128>(p.s.pow(2));
+        let right =  self.field.reduce::<_, u128>((p.r.pow(3) as u128) + self.a*p.r + self.b);
+        if self.verbose && verbose {
             let unred_left = p.s.pow(2);
             let unred_right = p.r.pow(3) + self.a*p.r + self.b;
             println!("All Points need to fullfill this equation:\n\
@@ -117,68 +151,148 @@ impl ElipticCurve {
 
 
     /// add two points
-    pub fn add(&self, p1: ElipticCurvePoint, p2: ElipticCurvePoint) -> Result<ElipticCurvePoint, String> {
+    pub fn add(&self, p1: ElipticCurvePoint, p2: ElipticCurvePoint) -> 
+        Result<ElipticCurvePoint, String> {
+        if self.verbose {
+            seperator();
+            println!("adding {p1} + {p2}");
+            seperator();
+        }
         if p1.field != p2.field {
             return Err(String::from("Points are not on the same field"));
         }
+        if !self.check_point(p1, self.verbose) {
+            return Err(String::from("{p1} is not a valid point"));
+        }
+        if !self.check_point(p2, self.verbose) {
+            return Err(String::from("{p2} is not a valid point"));
+        }
         if p1.field.prime_base {
+            // verbisity stuff
+            if self.verbose {
+                println!("{} = {}; {} = -{} = {} <=> {}",
+                         p1.r, p2.r, p1.s, p2.s, self.neg(p2).s, 
+                         p1.r == p2.r && p1.s == self.neg(p2).s,
+                         );
+            }
             // case 1: both infty
             if p1.is_infinity_point && p2.is_infinity_point {
+                if self.verbose {
+                    println!("case 1");
+                }
                 return Ok(self.INFINITY_POINT);
             }
             // case 2: one is infty
-            else if p1.is_infinity_point && !p2.is_infinity_point {
+            else if p1.is_infinity_point && !p2.is_infinity_point || 
+                    !p1.is_infinity_point && p2.is_infinity_point
+                {
+                if self.verbose {
+                    println!("case 2");
+                }
                 return Ok(self.INFINITY_POINT);
             }
-            else if !p1.is_infinity_point && p2.is_infinity_point {
-                return Ok(p1);
+            // case 4: r_1 = r_2 && s_1 = -s_2
+            else if p1.r == p2.r && p1.s == self.neg(p2).s {
+                if self.verbose {
+                    println!("case 4");
+                }
+                return Ok(self.INFINITY_POINT);
             }
             // case 3: r_1 != r_2
             else if p1.r != p2.r {
+                if self.verbose {
+                    println!("case 3");
+                }
                 if self.field.prime_base {
-                    let m = self.field.reduce(p2.s - p1.s) * 
+                    let m: u128 = self.field.reduce::<i128, u128>(p2.s as i128 - p1.s as i128) * 
                         self.field.inverse(
-                            self.field.reduce(p2.r - p1.r)
+                            self.field.reduce::<i128, u128>(p2.r as i128 - p1.r as i128)
                             ).expect("could not find inverse");
-                    if self.verbose || p2.verbose {
-                        println!("m = [s_2 - s_1]/[r_2 - r_1] = [{} - {}]/[{} - {}] = {} = {}",
-                                 p2.s, p1.s, p2.r, p1.r, m, p1.field.reduce(m))
-                    }
-                    let m = self.field.reduce(m);
-
-                    let r3 = self.field.reduce(m.pow(3)) - p1.r - p2.r;
+                    let m: i128 = m as i128;
                     if self.verbose {
-                        println!("r_3 = m³ - r_1 - r_2 = {} - {} - {} = {} = {}",
-                                 m.pow(3), p1.r, p2.r, r3, p1.field.reduce(r3));
+                        println!("m = [s_2 - s_1]/[r_2 - r_1] = [{} - {}]/[{} - {}] = {} = {}",
+                                 p2.s, p1.s, p2.r, p1.r, m, p1.field.reduce::<_, u128>(m))
                     }
-                    let r3 = self.field.reduce(r3);
+                    let m: i128 = self.field.reduce(m);
 
-                    let s3 = m.pow(3) - 2*m*p1.r - m*p2.r + p1.s;
-                    if self.verbose || p2.verbose {
-                        println!("s_3 = m³ − 2*m*r_1 − m*r_2 + s1 = {} - 2*{m}*{} - {m}*{} + {} = {} = {}",
-                                 m.pow(3), p1.r, p2.r, p1.s, s3, self.field.reduce(s3));
+                    let r3 = m.pow(2) - p1.r as i128 - p2.r as i128;
+                    if self.verbose {
+                        println!("r_3 = m² - r_1 - r_2 = {} - {} - {} = {} = {}",
+                                 m.pow(2), p1.r, p2.r, r3, p1.field.reduce::<_, u128>(r3));
                     }
-                    let s3 = self.field.reduce(s3) as i128;
-                    let p = ElipticCurvePoint::new(r3, self.field.reduce(-s3), self.field, self.verbose);
+                    let r3 = self.field.reduce::<_, u128>(r3);
 
-                    panic!("TODO");
+                    let s3 = m.pow(3) - 2*m*p1.r as i128 - m*p2.r as i128 + p1.s as i128;
+                    if self.verbose {
+                        println!("s_3 = m³ − 2*m*r_1 − m*r_2 + s1 =\
+                        {} - 2*{m}*{} - {m}*{} + {} = {} = {}",
+                                 m.pow(3), p1.r, p2.r, p1.s, s3, 
+                                 self.field.reduce::<_, u128>(s3));
+                    }
+                    let s3 = self.field.reduce::<_, u128>(s3) as i128;
+                    if self.verbose {
+                        println!("-s_3 = - {s3} = {}", self.field.reduce::<_, u128>(-s3));
+                    }
+                    let p3 = ElipticCurvePoint::new(r3, self.field.reduce::<_, u128>(-s3), 
+                                                    self.field, self.verbose);
+
+                    if self.verbose {
+                        seperator();
+                        println!("result: ({}, {})", p3.r, p3.s);
+                        seperator();
+                    }
+                    return Ok(p3);
                 }
                 else {
                     panic!("TODO");
                 }
             }
-            // case 4: r_1 = r_2 && s_1 = -s_2
-            else if p1.r == p2.r && p1.s == self.neg(p2).s {
-                return Ok(self.INFINITY_POINT);
-            }
             // case 5: P + P where P = (r, 0)
             else if p1 == p2 && p1.s == 0 {
+                if self.verbose {
+                    println!("case 5");
+                }
                 return Ok(self.INFINITY_POINT);
             }
             // case 6: P + P where s != 0
             else if p1 == p2 && p1.s != 0 {
+                if self.verbose {
+                    println!("case 6");
+                }
                 if self.field.prime_base {
-                    panic!("TODO");
+                    let m: i128 = (self.field.reduce::<_, u128>(3 * p1.r.pow(2) + self.a) * 
+                        self.field.inverse(
+                            self.field.reduce::<u128, u128>(2 * p1.r)
+                            ).expect("could not find inverse")) as i128;
+                    if self.verbose {
+                        println!("m = [3*r²]/[2s] = [3*{}²]/[2*{}] = {} = {}",
+                                 p1.r, p1.s, m, self.field.reduce::<_, u128>(m));
+                    }
+                    let m: i128 = self.field.reduce(m);
+
+                    let r3: i128 = self.field.reduce::<_, i128>(m.pow(2)) - p1.r as i128 - p2.r as i128;
+                    if self.verbose {
+                        println!("r_3 = m² - r_1 - r_2 = {} - {} - {} = {} = {}",
+                                 m.pow(2), p1.r, p2.r, r3, p1.field.reduce::<_, u128>(r3));
+                    }
+                    let r3: i128 = self.field.reduce(r3);
+
+                    let s3: i128 = m.pow(3) - 2*m*p1.r as i128 - m*p2.r as i128 + p1.s as i128;
+                    if self.verbose || p2.verbose {
+                        println!("s_3 = m³ − 2*m*r_1 − m*r_2 + s1 = {} - 2*{m}*{} - {m}*{} + {} = \
+                        {} = {}",
+                                 m.pow(3), p1.r, p2.r, p1.s, s3, self.field.reduce::<_, u128>(s3));
+                    }
+                    let s3: i128 = self.field.reduce(s3);
+                    let p3 = ElipticCurvePoint::new(r3 as u128, self.field.reduce::<_, u128>(-s3), 
+                                                    self.field, self.verbose);
+
+                    if self.verbose {
+                        seperator();
+                        println!("result: ({}, {})", p3.r, p3.s);
+                        seperator();
+                    }
+                    return Ok(p3);
                 }
                 else {
                     panic!("TODO");
@@ -188,7 +302,7 @@ impl ElipticCurve {
             // how do we get here?
             // this should never occur
             else {
-                panic!("No rules for adding these two points, should not be possible mathmatically.")
+                panic!("No rules for adding these two points, mathmatically impossible.")
             }
         }
         else {
@@ -198,18 +312,70 @@ impl ElipticCurve {
 
     /// get negative of a point
     pub fn neg(&self, p: ElipticCurvePoint) -> ElipticCurvePoint {
-        return ElipticCurvePoint::new(
-            p.r, 
-            p.field.reduce(-(p.s as i128)), 
-            p.field,
-            p.verbose
-            );
+        self.new_point(p.r, self.field.reduce::<_, u128>(-(p.s as i128))).expect("negation of \
+        point is not on field, math error")
     }
 
     /// multip.s a point by an integer
-    pub fn mul(self, p: ElipticCurvePoint, n: u128) -> ElipticCurvePoint {
-        // TODO
-        panic!("TODO");
+    pub fn mul<T>(&self, g: ElipticCurvePoint, t: T) -> Result<ElipticCurvePoint, String>
+        where
+        T: Integer,
+        T: NumCast,
+        T: Debug,
+        T: Unsigned,
+    {
+        if !self.check_point(g, self.verbose) {
+            return Err(String::from("invalid point"));
+        }
+        let t: usize = num::cast(t).unwrap();
+        if t < 1 {
+            return Err(String::from("point multiplication works only if t > 0"));
+        }
+        if self.verbose {
+            println!("h = t * g = {t} * {g}\n\
+            t = [{:b}]2", t)
+        }
+        let mut t_bits = BitVec::<_, Msb0>::from_element(t);
+        t_bits.reverse();
+        while t_bits[t_bits.len() - 1] == false {
+            t_bits.pop();
+        }
+        t_bits.reverse();
+        let l = t_bits.len() - 1;
+        let mut lh: ElipticCurvePoint = g;
+        let mut h: ElipticCurvePoint = g;
+        let mut index: usize = l;
+        if l == 0 {
+            return Ok(h);
+        }
+        for bit in t_bits {
+            if index == l {
+                if self.verbose {
+                    println!("h_{index} = {h}")
+                }
+                index -= 1;
+            }
+            h = self.add(lh, lh).expect("error while performing point multiplication");
+            if bit == false {
+                h = self.add(h, g).expect("error while performing point multiplication");
+            }
+            // else h = h
+            assert!(self.check_point(h, false));
+            lh = h;
+            if self.verbose {
+                println!("h_{index} = {h}")
+            }
+            index -= 1;
+        }
+        // now we should have reached h_0
+
+        return Ok(h);
+    }
+}
+
+impl std::fmt::Display for ElipticCurve{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "F(X, Y) = Y² - X³ -{}X - {}", self.a, self.b)
     }
 }
 
@@ -234,6 +400,17 @@ impl ElipticCurvePoint {
             is_infinity_point: false,
             field,
             verbose
+        }
+    }
+}
+
+impl std::fmt::Display for ElipticCurvePoint {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        if self.is_infinity_point {
+            write!(f, "(∞ INFINITY)")
+        }
+        else {
+            write!(f, "({}, {})", self.r, self.s)
         }
     }
 }
@@ -278,10 +455,71 @@ pub mod test {
             ElipticCurvePoint::new(1, 4, f, false),
         ];
         for i in p {
-            assert!(ec.clone().check_point(i));
+            assert!(ec.clone().check_point(i, true));
         }
         for i in np {
-            assert!(!ec.clone().check_point(i));
+            assert!(!ec.clone().check_point(i, true));
         }
+    }
+
+    #[test]
+    fn test_add_points() {
+        let f = GalloisField::new(11, true, None);
+        let ec = ElipticCurve::new(f, 1, 1, true).expect("ec cant be created");
+        let p1 = ec.new_point(3, 3).expect("point is on ec but an error occurs");
+        let p2 = ec.new_point(6, 5).expect("point is on ec but an error occurs");
+        let p3 = ec.new_point(0, 10).expect("point is on ec but an error occurs");
+        assert_eq!(ec.add(p1, p2).expect("error for possible addition"), p3);
+
+        let f = GalloisField::new(13, true, None);
+        let ec = ElipticCurve::new(f, -3, 3, true).expect("ec cant be created");
+        let p1 = ec.new_point(1, 1).expect("point is on ec but an error occurs");
+        let p2 = ec.new_point(5, 3).expect("point is on ec but an error occurs");
+        let p3 = ec.new_point(4, 4).expect("point is on ec but an error occurs");
+        let p4 = ec.new_point(8, 6).expect("point is on ec but an error occurs");
+        let p5 = ec.new_point(11, 12).expect("point is on ec but an error occurs");
+        assert_eq!(ec.add(p1, p2).expect("error for possible addition"), p3);
+        assert_eq!(ec.add(p2, p4).expect("error for possible addition"), p1);
+        assert_eq!(ec.add(p1, p1).expect("error for possible addition"), p5);
+
+        let f = GalloisField::new(19, true, None);
+        let ec = ElipticCurve::new(f, 7, 13, true).expect("ec cant be created");
+        let p1 = ec.new_point(2, 15).expect("point is on ec but an error occurs");
+        let p2 = ec.new_point(6, 10).expect("point is on ec but an error occurs");
+        let p3 = ec.new_point(9, 8).expect("point is on ec but an error occurs");
+        assert_eq!(ec.add(p1, p2).expect("error for possible addition"), p3);
+
+        let f = GalloisField::new(13, true, None);
+        let ec = ElipticCurve::new(f, 7, 11, true).expect("ec cant be created");
+        let p1 = ec.new_point(4, 5).expect("point is on ec but an error occurs");
+        let p2 = ec.new_point(6, 10).expect("point is on ec but an error occurs");
+        assert_eq!(ec.add(p1, p1).expect("error for possible addition"), p2);
+    }
+
+    #[test]
+    fn test_mul_points() {
+        // from ecc lectures
+        let f = GalloisField::new(13, true, None);
+        let ec = ElipticCurve::new(f, 7, 11, true).expect("ec cant be created");
+        let p1 = ec.new_point(4, 5).expect("point is on ec but an error occurs");
+        let p2 = ec.new_point(6, 10).expect("point is on ec but an error occurs");
+        let p3 = ec.new_point(4, 8).expect("point is on ec but an error occurs");
+        let p4 = ec.new_point(6, 3).expect("point is on ec but an error occurs");
+        assert_eq!(ec.mul(p1, 2u32).expect("error for possible addition"), p2);
+        assert_eq!(ec.mul(p1, 4u32).expect("error for possible addition"), p3);
+        assert_eq!(ec.mul(p3, 2u32).expect("error for possible addition"), p4);
+        assert_eq!(ec.mul(p2, 4u32).expect("error for possible addition"), p4);
+
+        //let f = GalloisField::new(13, true, None);
+        //let ec = ElipticCurve::new(f, -3, 3, true).expect("ec cant be created");
+        //let p1 = ec.new_point(1, 1).expect("point is on ec but an error occurs");
+        //let p2 = ec.new_point(11, 12).expect("point is on ec but an error occurs");
+        //assert_eq!(ec.mul(p1, 2u64).expect("error for possible addition"), p2);
+
+        //let f = GalloisField::new(17, true, None);
+        //let ec = ElipticCurve::new(f, 11, 3, true).expect("ec cant be created");
+        //let p1 = ec.new_point(5, 8).expect("point is on ec but an error occurs");
+        //let p2 = ec.new_point(6, 8).expect("point is on ec but an error occurs");
+        //assert_eq!(ec.mul(p1, 10u128).expect("error for possible addition"), p2);
     }
 }

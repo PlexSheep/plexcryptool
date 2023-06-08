@@ -68,12 +68,61 @@ pub fn main() {
                             cplex::printing::proc_result_tup_num(result, args);
                         }
                         GalloisActions::Reduce(gal_red_args) => {
-                            let result = field.reduce(gal_red_args.n);
+                            let result = field.reduce::<_, u128>(gal_red_args.n);
                             cplex::printing::proc_num(result, args);
                         }
-                        GalloisActions::Invert(gal_inv_args) => {
+                        GalloisActions::Inverse(gal_inv_args) => {
                             let result = field.inverse(gal_inv_args.n);
                             cplex::printing::proc_result_num(result, args);
+                        }
+                        GalloisActions::ECC(ecc_args) => {
+                            let ec = math::ecc::ElipticCurve::new(field, ecc_args.a, ecc_args.b, args.verbose).expect("Could not create eliptic curve");
+                            match ecc_args.action {
+                                ECCActions::Neg(ecc_neg_args) => {
+                                    let p = ec.new_point(ecc_neg_args.r, ecc_neg_args.s);
+                                    match p {
+                                        Ok(p) => {
+                                            let item = ec.neg(p);
+                                            cplex::printing::proc_display(item, args)
+                                        }
+                                        Err(e) => {
+                                            cplex::printing::proc_err(e, args);
+                                        }
+                                    }
+                                }
+                                ECCActions::Mul(ecc_mul_args) => {
+                                    let p = ec.new_point(ecc_mul_args.r, ecc_mul_args.s);
+                                    if p.is_err() {
+                                        cplex::printing::proc_err(p, args);
+                                    }
+                                    else {
+                                        let item = ec.mul(p.unwrap(), ecc_mul_args.n);
+                                        if item.is_err() {
+                                            cplex::printing::proc_err(item.unwrap_err(), args)
+                                        }
+                                        else {
+                                            cplex::printing::proc_display(item.unwrap(), args);
+                                        }
+                                    }
+                                }
+                                ECCActions::Add(ecc_add_args) => {
+                                    let p1 = ec.new_point(ecc_add_args.r1, ecc_add_args.s1);
+                                    let p2 = ec.new_point(ecc_add_args.r2, ecc_add_args.s2);
+                                    if p1.is_err() || p2.is_err() {
+                                        cplex::printing::proc_err(p1, args.clone());
+                                        cplex::printing::proc_err(p2, args);
+                                    }
+                                    else {
+                                        let item = ec.add(p1.unwrap(), p2.unwrap());
+                                        if item.is_err() {
+                                            cplex::printing::proc_err(item.unwrap_err(), args)
+                                        }
+                                        else {
+                                            cplex::printing::proc_display(item.unwrap(), args);
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

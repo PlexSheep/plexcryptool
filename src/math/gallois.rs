@@ -35,11 +35,13 @@ pub const F_256_DEFAULT_RELATION: u128 = 0x11b;
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #[derive(Debug)]
 /// used when trying to find a root for a number which does not have a root.
-pub struct NoInverseError;
+pub struct NoInverseError {
+    pub n: u128
+}
 
 impl fmt::Display for NoInverseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "inverse for 0 does not exist")
+        write!(f, "inverse for {} does not exist", self.n)
     }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -136,32 +138,30 @@ impl GalloisField {
         T: Integer,
         T: NumCast,
         T: Debug,
-        K: Unsigned,
         K: Integer,
         K: NumCast,
         K: Debug,
-    {
-        dbg!(&n);
-        let mut n: i128 = num::cast(n).unwrap();
-        if self.prime_base {
-            if n < 0 {
-                while n < 0 {
-                    n += self.base as i128;
+        {
+            let mut n: i128 = num::cast(n).unwrap();
+            if self.prime_base {
+                if n < 0 {
+                    while n < 0 {
+                        n += self.base as i128;
+                    }
                 }
+                n %= self.base as i128;
+                let n: K = num::cast(n).unwrap();
+                return n;
             }
-            n %= self.base as i128;
-            let n: K = num::cast(n).unwrap();
-            return n;
-        }
-        else {
-            if n < 0 {
-                panic!("reduction for negative numbers not implemented.");
+            else {
+                if n < 0 {
+                    panic!("reduction for negative numbers not implemented.");
+                }
+                let n = modred(n as u128, self.relation.unwrap(), false).expect("modular reduction didn't work");
+                let n: K = num::cast(n).unwrap();
+                return n;
             }
-            let n = modred(n as u128, self.relation.unwrap(), false).expect("modular reduction didn't work");
-            let n: K = num::cast(n).unwrap();
-            return n;
         }
-    }
 
     /// calculate the exponent of a base in the field
     pub fn pow(self, base: u128, exp: u128) -> u128 {
@@ -175,9 +175,8 @@ impl GalloisField {
 
     /// find the multiplicative inverse of a number
     pub fn inverse(self, n: u128) -> Result<u128, NoInverseError> {
-        dbg!(&n);
         if n == 0 {
-            return Err(NoInverseError);
+            return Err(NoInverseError{n});
         }
         let egcd = (n as i128).extended_gcd(&(self.base as i128));
         let egcd = self.reduce(egcd.x);
@@ -307,7 +306,7 @@ impl GalloisField {
                     println!("{index}.\ta^(2^[l-(i+1)]*t) * b^(n_{index}) = {a}^(2^[{l}-({index}+1)]*{t}) * {b}^({}) = {tmp} (mod {})", 
                              n[index as usize],
                              self.base
-                             );
+                            );
                 }
                 c.push(tmp);
                 if self.verbose {
@@ -324,7 +323,7 @@ impl GalloisField {
                                  index + 1, 
                                  n[index as usize], 
                                  n[index as usize]
-                                 );
+                                );
                     }
                 }
                 else {
@@ -340,7 +339,7 @@ impl GalloisField {
                                  index + 1, 
                                  n[index as usize], 
                                  n.last().unwrap()
-                                 );
+                                );
                     }
                 }
             }
@@ -357,10 +356,10 @@ impl GalloisField {
             w1 = self.reduce(w1);
             if self.verbose {
                 println!("w_1 = [a^(t+1)]/[2] * b^(n_l) = [{a}^([{t}+1])]/[2] * {b}^{} = {} (mod {})", 
-                       n[l as usize], 
-                       w1, 
-                       self.base
-                       );
+                         n[l as usize], 
+                         w1, 
+                         self.base
+                        );
             }
             let w2 = self.a_inverse(w1);
             if self.verbose {
@@ -388,7 +387,7 @@ impl GalloisField {
             println!("Therefore, char(F_{}) = {i}", self.base);
             seperator();
         }
-        
+
         self.cha = i;
         return i;
     }
@@ -407,7 +406,7 @@ impl GalloisField {
     pub fn py_pow(&self, base: u128, exp: u128) -> u128 {
         return self.pow(base, exp);
     }
-    
+
     #[pyo3(name="reduce")]
     /// reduce any int
     pub fn py_reduce(&self, n: i128) -> u128 {
@@ -462,55 +461,62 @@ impl GalloisField {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-#[test]
-fn test_gallois_sqrt() {
-    let field = GalloisField::new(977, true, None);
-    assert_eq!(field.sqrt(269).expect("function says there is no root but there is"), (313, 664));
-    assert_eq!(field.sqrt(524).expect("function says there is no root but there is"), (115, 862));
-    assert_eq!(field.sqrt(275).expect("function says there is no root but there is"), (585, 392));
-}
 
-#[test]
-fn test_gallois_reduce() {
-    let field = GalloisField::new(977, true, None);
-    for i in 0..976u128 {
-        assert_eq!(field.reduce::<_, u128>(i as u128), i);
+#[cfg(test)]
+pub mod test {
+
+    use super::*;
+
+	#[test]
+    fn test_gallois_sqrt() {
+        let field = GalloisField::new(977, true, None);
+        assert_eq!(field.sqrt(269).expect("function says there is no root but there is"), (313, 664));
+        assert_eq!(field.sqrt(524).expect("function says there is no root but there is"), (115, 862));
+        assert_eq!(field.sqrt(275).expect("function says there is no root but there is"), (585, 392));
     }
 
-    let field = GalloisField::new(16, true, None);
-}
+	#[test]
+    fn test_gallois_reduce() {
+        let field = GalloisField::new(977, true, None);
+        for i in 0..976u128 {
+            assert_eq!(field.reduce::<_, u128>(i as u128), i);
+        }
 
-#[test]
-fn test_gallois_inverse() {
-    let field = GalloisField::new(31, true, None);
-    assert_eq!(field.inverse(12).unwrap(), 13);
-    assert_eq!(field.inverse(28).unwrap(), 10);
-    assert!(field.inverse(0).is_err());
+        let field = GalloisField::new(16, true, None);
+    }
 
-    let field = GalloisField::new(83, true, None);
-    assert_eq!(field.inverse(6).unwrap(), 14);
-    assert_eq!(field.inverse(54).unwrap(), 20);
-    assert!(field.inverse(0).is_err());
+	#[test]
+    fn test_gallois_inverse() {
+        let field = GalloisField::new(31, true, None);
+        assert_eq!(field.inverse(12).unwrap(), 13);
+        assert_eq!(field.inverse(28).unwrap(), 10);
+        assert!(field.inverse(0).is_err());
 
-    let field = GalloisField::new(23, true, None);
-    assert_eq!(field.inverse(17).unwrap(), 19);
-    assert_eq!(field.inverse(7).unwrap(), 10);
-    assert!(field.inverse(0).is_err());
+        let field = GalloisField::new(83, true, None);
+        assert_eq!(field.inverse(6).unwrap(), 14);
+        assert_eq!(field.inverse(54).unwrap(), 20);
+        assert!(field.inverse(0).is_err());
 
-    // TODO add a test for a field that has a non prime base
-    let field = GalloisField::new(16, true, None);
-    assert_eq!(field.inverse(0x130).unwrap(), 0);
-    assert!(field.inverse(0).is_err());
-}
+        let field = GalloisField::new(23, true, None);
+        assert_eq!(field.inverse(17).unwrap(), 19);
+        assert_eq!(field.inverse(7).unwrap(), 10);
+        assert!(field.inverse(0).is_err());
 
-#[test]
-fn test_calc_char() {
-    assert_eq!(GalloisField::new(83, true, None).calc_char(), 83);
-    assert_eq!(GalloisField::new(1151, true, None).calc_char(), 1151);
-    assert_eq!(GalloisField::new(2, true, None).calc_char(), 2);
+        // TODO add a test for a field that has a non prime base
+        let field = GalloisField::new(16, true, None);
+        assert_eq!(field.inverse(0x130).unwrap(), 0);
+        assert!(field.inverse(0).is_err());
+    }
 
-    //// experimental
-    //assert_eq!(GalloisField::new(8, true, None).calc_char(), 2);
-    //assert_eq!(GalloisField::new(64, true, None).calc_char(), 2);
-    ////assert_eq!(GalloisField::new(2u128.pow(64u32), true, None).calc_char(), 2);
+	#[test]
+    fn test_calc_char() {
+        assert_eq!(GalloisField::new(83, true, None).calc_char(), 83);
+        assert_eq!(GalloisField::new(1151, true, None).calc_char(), 1151);
+        assert_eq!(GalloisField::new(2, true, None).calc_char(), 2);
+
+        //// experimental
+        //assert_eq!(GalloisField::new(8, true, None).calc_char(), 2);
+        //assert_eq!(GalloisField::new(64, true, None).calc_char(), 2);
+        ////assert_eq!(GalloisField::new(2u128.pow(64u32), true, None).calc_char(), 2);
+    }
 }
