@@ -165,158 +165,146 @@ impl ElipticCurve {
         if !self.check_point(p2, false) {
             return Err(String::from("{p2} is not a valid point"));
         }
-        if self.field.prime_base {
-            // verbisity stuff
-            //if self.verbose {
-            //    println!("{} = {}; {} = -{} = {} <=> {}",
-            //             p1.r, p2.r, p1.s, p2.s, self.neg(p2).s, 
-            //             p1.r == p2.r && p1.s == self.neg(p2).s,
-            //             );
-            //}
-            // case 1: both infty
-            if p1.is_infinity_point && p2.is_infinity_point {
-                if self.verbose {
-                    println!("case 1");
-                }
-                return Ok(self.INFINITY_POINT);
+        // case 1: both infty
+        if p1.is_infinity_point && p2.is_infinity_point {
+            if self.verbose {
+                println!("case 1");
             }
-            // case 2: one is infty
-            else if p1.is_infinity_point && !p2.is_infinity_point || 
-                    !p1.is_infinity_point && p2.is_infinity_point
-                {
-                if self.verbose {
-                    println!("case 2");
-                }
-                return Ok(self.INFINITY_POINT);
+            return Ok(self.INFINITY_POINT);
+        }
+        // case 2: one is infty
+        else if p1.is_infinity_point && !p2.is_infinity_point || 
+                !p1.is_infinity_point && p2.is_infinity_point
+            {
+            if self.verbose {
+                println!("case 2");
             }
-            // case 3: r_1 != r_2
-            else if p1.r != p2.r {
-                if self.verbose {
-                    println!("case 3");
-                }
-                if self.field.prime_base {
-                    let m: u128 = self.field.reduce::<i128, u128>(p2.s as i128 - p1.s as i128) * 
-                        self.field.inverse(
-                            self.field.reduce::<i128, u128>(p2.r as i128 - p1.r as i128)
-                            ).expect("could not find inverse");
-                    let m: i128 = m as i128;
-                    if self.verbose {
-                        println!("m = [s_2 - s_1]/[r_2 - r_1] = [{} - {}]/[{} - {}] = {} = {}",
-                                 p2.s, p1.s, p2.r, p1.r, m, self.field.reduce::<_, u128>(m))
-                    }
-                    let m: i128 = self.field.reduce(m);
-
-                    let r3 = m.pow(2) - p1.r as i128 - p2.r as i128;
-                    if self.verbose {
-                        println!("r_3 = m² - r_1 - r_2 = {} - {} - {} = {} = {}",
-                                 m.pow(2), p1.r, p2.r, r3, self.field.reduce::<_, u128>(r3));
-                    }
-                    let r3 = self.field.reduce::<_, u128>(r3);
-
-                    let s3 = m.pow(3) - 2*m*p1.r as i128 - m*p2.r as i128 + p1.s as i128;
-                    if self.verbose {
-                        println!("s_3 = m³ − 2*m*r_1 − m*r_2 + s1 =\
-                        {} - 2*{m}*{} - {m}*{} + {} = {} = {}",
-                                 m.pow(3), p1.r, p2.r, p1.s, s3, 
-                                 self.field.reduce::<_, u128>(s3));
-                    }
-                    let s3 = self.field.reduce::<_, u128>(s3) as i128;
-                    if self.verbose {
-                        println!("-s_3 = - {s3} = {}", self.field.reduce::<_, u128>(-s3));
-                        println!("Q = ({}, {})", r3, s3);
-                    }
-                    let p3 = self.new_point(r3, self.field.reduce::<_, u128>(-s3)).expect("calculated point does not exist");
-
-                    if self.verbose {
-                        seperator();
-                        println!("result: ({}, {})", p3.r, p3.s);
-                        seperator();
-                    }
-                    return Ok(p3);
-                }
-                else {
-                    panic!("TODO");
-                }
+            return Ok(self.INFINITY_POINT);
+        }
+        // case 3: r_1 != r_2
+        else if p1.r != p2.r {
+            if self.verbose {
+                println!("case 3");
             }
-            // case 4: r_1 = r_2 && s_1 = -s_2
-            else if p1.r == p2.r && p1.s == self.neg(p2).s {
+            if self.field.prime_base {
+                let m: u128 = self.field.reduce::<i128, u128>(p2.s as i128 - p1.s as i128) * 
+                    self.field.inverse(
+                        self.field.reduce::<i128, u128>(p2.r as i128 - p1.r as i128)
+                        ).expect("could not find inverse");
+                let m: i128 = m as i128;
                 if self.verbose {
-                    println!("case 4");
+                    println!("m = [s_2 - s_1]/[r_2 - r_1] = [{} - {}]/[{} - {}] = {} = {}",
+                             p2.s, p1.s, p2.r, p1.r, m, self.field.reduce::<_, u128>(m))
                 }
-                return Ok(self.INFINITY_POINT);
-            }
-            // case 5: P + P where P = (r, 0)
-            else if p1 == p2 && p1.s == 0 {
+                let m: i128 = self.field.reduce(m);
+
+                let r3 = m.pow(2) - p1.r as i128 - p2.r as i128;
                 if self.verbose {
-                    println!("case 5");
+                    println!("r_3 = m² - r_1 - r_2 = {} - {} - {} = {} = {}",
+                             m.pow(2), p1.r, p2.r, r3, self.field.reduce::<_, u128>(r3));
                 }
-                return Ok(self.INFINITY_POINT);
-            }
-            // case 6: P + P where s != 0
-            else if p1 == p2 && p1.s != 0 {
+                let r3 = self.field.reduce::<_, u128>(r3);
+
+                let s3 = m.pow(3) - 2*m*p1.r as i128 - m*p2.r as i128 + p1.s as i128;
                 if self.verbose {
-                    println!("case 6");
+                    println!("s_3 = m³ − 2*m*r_1 − m*r_2 + s1 =\
+                    {} - 2*{m}*{} - {m}*{} + {} = {} = {}",
+                             m.pow(3), p1.r, p2.r, p1.s, s3, 
+                             self.field.reduce::<_, u128>(s3));
                 }
-                if self.field.prime_base {
-                    let m: i128 = (self.field.reduce::<_, u128>(3 * p1.r.pow(2) + self.a) * 
-                        self.field.inverse(
-                            self.field.reduce::<u128, u128>(2 * p1.s)
-                            ).expect("could not find inverse")) as i128;
-                    if self.verbose {
-                        println!("m = [3*r² + a]/[2s] = [3*{}² + {}]/[2*{}] = \
-                        {}/{} = \
-                        {}*{} = \
-                        {} = {}",
-                                 p1.r, self.a, p1.s,
-
-                                 self.field.reduce::<_, u128>(3 * p1.r.pow(2) + self.a),
-                                 2 * p1.s, 
-
-                                 self.field.reduce::<_, u128>(3 * p1.r.pow(2) + self.a),
-                                 self.field.inverse(self.field.reduce::<u128, u128>(2 * p1.s)).unwrap(), 
-
-                                 m,
-                                 self.field.reduce::<_, u128>(m)
-                                 );
-                    }
-                    let m: i128 = self.field.reduce(m);
-
-                    let r3: i128 = self.field.reduce::<_, i128>(m.pow(2)) - p1.r as i128 - p2.r as i128;
-                    if self.verbose {
-                        println!("r_3 = m² - r_1 - r_2 = {} - {} - {} = {} = {}",
-                                 m.pow(2), p1.r, p2.r, r3, self.field.reduce::<_, u128>(r3));
-                    }
-                    let r3: i128 = self.field.reduce(r3);
-
-                    let s3: i128 = m.pow(3) - 2*m*p1.r as i128 - m*p2.r as i128 + p1.s as i128;
-                    if self.verbose {
-                        println!("s_3 = m³ − 2*m*r_1 − m*r_2 + s1 = {} - 2*{m}*{} - {m}*{} + {} = \
-                        {} = {}",
-                                 m.pow(3), p1.r, p2.r, p1.s, s3, self.field.reduce::<_, u128>(s3));
-                    }
-                    let s3: i128 = self.field.reduce(s3);
-                    let p3 = self.new_point(r3 as u128, self.field.reduce::<_, u128>(-s3)).expect("calculated point does not exist in curve");
-
-                    if self.verbose {
-                        seperator();
-                        println!("result: ({}, {})", p3.r, p3.s);
-                        seperator();
-                    }
-                    return Ok(p3);
+                let s3 = self.field.reduce::<_, u128>(s3) as i128;
+                if self.verbose {
+                    println!("-s_3 = - {s3} = {}", self.field.reduce::<_, u128>(-s3));
+                    println!("Q = ({}, {})", r3, s3);
                 }
-                else {
-                    panic!("TODO");
+                let p3 = self.new_point(r3, self.field.reduce::<_, u128>(-s3)).expect("calculated point does not exist");
+
+                if self.verbose {
+                    seperator();
+                    println!("result: ({}, {})", p3.r, p3.s);
+                    seperator();
                 }
+                return Ok(p3);
             }
-
-            // how do we get here?
-            // this should never occur
             else {
-                panic!("No rules for adding these two points, mathmatically impossible.")
+                panic!("TODO");
             }
         }
+        // case 4: r_1 = r_2 && s_1 = -s_2
+        else if p1.r == p2.r && p1.s == self.neg(p2).s {
+            if self.verbose {
+                println!("case 4");
+            }
+            return Ok(self.INFINITY_POINT);
+        }
+        // case 5: P + P where P = (r, 0)
+        else if p1 == p2 && p1.s == 0 {
+            if self.verbose {
+                println!("case 5");
+            }
+            return Ok(self.INFINITY_POINT);
+        }
+        // case 6: P + P where s != 0
+        else if p1 == p2 && p1.s != 0 {
+            if self.verbose {
+                println!("case 6");
+            }
+            if self.field.prime_base {
+                let m: i128 = (self.field.reduce::<_, u128>(3 * p1.r.pow(2) + self.a) * 
+                    self.field.inverse(
+                        self.field.reduce::<u128, u128>(2 * p1.s)
+                        ).expect("could not find inverse")) as i128;
+                if self.verbose {
+                    println!("m = [3*r² + a]/[2s] = [3*{}² + {}]/[2*{}] = \
+                    {}/{} = \
+                    {}*{} = \
+                    {} = {}",
+                             p1.r, self.a, p1.s,
+
+                             self.field.reduce::<_, u128>(3 * p1.r.pow(2) + self.a),
+                             2 * p1.s, 
+
+                             self.field.reduce::<_, u128>(3 * p1.r.pow(2) + self.a),
+                             self.field.inverse(self.field.reduce::<u128, u128>(2 * p1.s)).unwrap(), 
+
+                             m,
+                             self.field.reduce::<_, u128>(m)
+                             );
+                }
+                let m: i128 = self.field.reduce(m);
+
+                let r3: i128 = self.field.reduce::<_, i128>(m.pow(2)) - p1.r as i128 - p2.r as i128;
+                if self.verbose {
+                    println!("r_3 = m² - r_1 - r_2 = {} - {} - {} = {} = {}",
+                             m.pow(2), p1.r, p2.r, r3, self.field.reduce::<_, u128>(r3));
+                }
+                let r3: i128 = self.field.reduce(r3);
+
+                let s3: i128 = m.pow(3) - 2*m*p1.r as i128 - m*p2.r as i128 + p1.s as i128;
+                if self.verbose {
+                    println!("s_3 = m³ − 2*m*r_1 − m*r_2 + s1 = {} - 2*{m}*{} - {m}*{} + {} = \
+                    {} = {}",
+                             m.pow(3), p1.r, p2.r, p1.s, s3, self.field.reduce::<_, u128>(s3));
+                }
+                let s3: i128 = self.field.reduce(s3);
+                let p3 = self.new_point(r3 as u128, self.field.reduce::<_, u128>(-s3)).expect("calculated point does not exist in curve");
+
+                if self.verbose {
+                    seperator();
+                    println!("result: ({}, {})", p3.r, p3.s);
+                    seperator();
+                }
+                return Ok(p3);
+            }
+            else {
+                panic!("TODO");
+            }
+        }
+
+        // how do we get here?
+        // this should never occur
         else {
-            return Err(String::from("Only prime fields are supported currently"));
+            panic!("No rules for adding these two points, mathmatically impossible.")
         }
     }
 
