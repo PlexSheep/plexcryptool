@@ -26,6 +26,8 @@ use pyo3::{prelude::*, exceptions::PyValueError};
 
 use primes::is_prime;
 
+use bitvec::prelude::*;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 pub const F_8_DEFAULT_RELATION: u128 = 0xb; 
@@ -157,7 +159,8 @@ impl GalloisField {
                 if n < 0 {
                     panic!("reduction for negative numbers not implemented.");
                 }
-                let n = modred(n as u128, self.relation.unwrap(), false).expect("modular reduction didn't work");
+                let n = modred(n as u128, self.relation.unwrap(), false)
+                    .expect("modular reduction didn't work");
                 let n: K = num::cast(n).unwrap();
                 return n;
             }
@@ -392,6 +395,48 @@ impl GalloisField {
         return i;
     }
 
+    /// display an element in the field
+    ///
+    /// n is a polynomial or a number in the prime field
+    pub fn display<T>(&self, n: T) -> String
+        where
+        T: Integer,
+        T: NumCast,
+        T: Debug
+        {
+            let mut n: u128 = self.reduce(num::cast::<_, u128>(n).unwrap());
+            let mut buf: String = String::new();
+            let n_len = n.count_ones() + n.count_zeros();
+            let mut first: bool = true;
+            for index in (0..n_len).rev() {
+                let bit = n & (1 << index) != 0;
+                if bit {
+                    if first {
+                        if index == 0 {
+                            buf += format!("1").as_str();
+                        }
+                        else {
+                            buf += format!("α^{}", index).as_str();
+                        }
+                        first = false;
+                    }
+                    else {                    
+                        if index == 0 {
+                            buf += format!(" + 1").as_str();
+
+                        }
+                        else {
+                            buf += format!(" + α^{}", index).as_str();
+                        }
+                    }
+                }
+            }
+            if self.verbose {
+                println!("{n:#x} as polynomial:\n{buf}");
+            }
+            return buf;
+        }
+
 }
 
 #[pymethods]
@@ -460,6 +505,11 @@ impl GalloisField {
         panic!("No order was found, but n is not 0 and all possibilities have been tried");
     }
 
+    #[pyo3(name="display")]
+    pub fn py_display(&self, n: i128) -> String {
+        self.display(n)
+    }
+
     fn __str__(&self) -> PyResult<String>   {
         Ok(format!("{}", self))
     }
@@ -482,7 +532,7 @@ pub mod test {
 
     use super::*;
 
-	#[test]
+    #[test]
     fn test_gallois_sqrt() {
         let field = GalloisField::new(977, true, None);
         assert_eq!(field.sqrt(269).expect("function says there is no root but there is"), (313, 664));
@@ -490,17 +540,23 @@ pub mod test {
         assert_eq!(field.sqrt(275).expect("function says there is no root but there is"), (585, 392));
     }
 
-	#[test]
+    #[test]
     fn test_gallois_reduce() {
         let field = GalloisField::new(977, true, None);
-        for i in 0..976u128 {
-            assert_eq!(field.reduce::<_, u128>(i as u128), i);
+        for i in 0..976 {
+            assert_eq!(field.reduce::<_, u128>(i), i);
         }
-
-        let _ = GalloisField::new(16, true, None);
     }
 
-	#[test]
+    #[test]
+    fn test_gallois_reduce_c2() {
+        let field = GalloisField::new(16, true, None);
+        for i in 0..976 {
+            assert_eq!(field.reduce::<_, u128>(i), i);
+        }
+    }
+
+    #[test]
     fn test_gallois_inverse() {
         let field = GalloisField::new(31, true, None);
         assert_eq!(field.inverse(12).unwrap(), 13);
@@ -523,15 +579,44 @@ pub mod test {
         assert!(field.inverse(0).is_err());
     }
 
-	#[test]
+    #[test]
     fn test_calc_char() {
         assert_eq!(GalloisField::new(83, true, None).calc_char(), 83);
         assert_eq!(GalloisField::new(1151, true, None).calc_char(), 1151);
         assert_eq!(GalloisField::new(2, true, None).calc_char(), 2);
+    }
 
-        //// experimental
-        //assert_eq!(GalloisField::new(8, true, None).calc_char(), 2);
-        //assert_eq!(GalloisField::new(64, true, None).calc_char(), 2);
-        ////assert_eq!(GalloisField::new(2u128.pow(64u32), true, None).calc_char(), 2);
+    #[test]
+    fn test_calc_char_c2() {
+        assert_eq!(GalloisField::new(8, true, None).calc_char(), 2);
+        assert_eq!(GalloisField::new(16, true, None).calc_char(), 2);
+        assert_eq!(GalloisField::new(256, true, None).calc_char(), 2);
+    }
+
+    #[test]
+    fn test_display_c2() {
+        let f = GalloisField::new(16, true, None);
+        assert_eq!(f.display(0b01), String::from("1"));
+        assert_eq!(f.display(0b10), String::from("α^1"));
+        assert_eq!(f.display(0b11), String::from("α^1 + 1"));
+        assert_eq!(f.display(0b100), String::from("α^2"));
+        assert_eq!(f.display(0b101), String::from("α^2 + 1"));
+        assert_eq!(f.display(0b110), String::from("α^2 + α^1"));
+        assert_eq!(f.display(0b111), String::from("α^2 + α^1 + 1"));
+        assert_eq!(f.display(0b1001), String::from("α^3 + 1"));
+        assert_eq!(f.display(0b1010), String::from("α^3 + α^1"));
+        assert_eq!(f.display(0b1100), String::from("α^3 + α^2"));
+        assert_eq!(f.display(0b1101), String::from("α^3 + α^2 + 1"));
+        assert_eq!(f.display(0b1110), String::from("α^3 + α^2 + α^1"));
+        assert_eq!(f.display(0b1111), String::from("α^3 + α^2 + α^1 + 1"));
+
+        let f = GalloisField::new(8, true, None);
+        assert_eq!(f.display(0b01), String::from("1"));
+        assert_eq!(f.display(0b10), String::from("α^1"));
+        assert_eq!(f.display(0b11), String::from("α^1 + 1"));
+        assert_eq!(f.display(0b100), String::from("α^2"));
+        assert_eq!(f.display(0b101), String::from("α^2 + 1"));
+        assert_eq!(f.display(0b110), String::from("α^2 + α^1"));
+        assert_eq!(f.display(0b111), String::from("α^2 + α^1 + 1"));
     }
 }
