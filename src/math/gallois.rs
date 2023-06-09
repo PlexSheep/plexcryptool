@@ -18,7 +18,7 @@
 use crate::{math::modexp, cplex::printing::seperator, math::modred::modred};
 
 use core::fmt;
-use std::fmt::Debug;
+use std::{fmt::Debug, ops::BitXor};
 
 use num::{Integer, NumCast};
 
@@ -184,6 +184,30 @@ impl GalloisField {
         let egcd = (n as i128).extended_gcd(&(self.base as i128));
         let egcd = self.reduce(egcd.x);
         return Ok(egcd);
+    }
+
+    /// addition in the field
+    /// 
+    /// in case of a prime base, addition works as normal,
+    /// if the base is a prime power, all elements are treated as polynomials, so the
+    /// operations are changed too.
+    pub fn add<T>(&self, a: T, b: T) -> T
+        where
+        T: Integer,
+        T: Debug,
+        T: NumCast,
+    {
+        let a: u128 = self.reduce(num::cast::<_, u128>(a).unwrap());
+        let b: u128 = self.reduce(num::cast::<_, u128>(b).unwrap());
+        let r: u128;
+        if self.prime_base {
+            r = a + b;
+        }
+        else {
+            r = a ^ b;
+            println!("r = a ^ b = {a:b} ^ {b:b} = {r:b}");
+        }
+        num::cast(self.reduce::<_, T>(r)).unwrap()
     }
 
     pub fn divide(self, a: u128, b: u128) -> Result<u128, DivisionByZeroError> {
@@ -382,8 +406,8 @@ impl GalloisField {
             println!("calculating characteristic of F_{}", self.base);
         }
         let mut i = 1u128;
-        while self.reduce::<_, u128>(i) > 0 {
-            i += 1;
+        while self.reduce::<_, u128>(i) != 0 {
+            i = self.add(i, 1);
         }
         if self.verbose {
             println!("{i} = {} (mod {})", self.reduce::<_, u128>(i), self.base);
@@ -549,9 +573,35 @@ pub mod test {
     }
 
     #[test]
+    fn test_gallois_add() {
+        let field = GalloisField::new(977, true, None);
+        let ns = [132,1232,121,424];
+        for i in 0..976 {
+            for n in ns {
+                assert_eq!(field.add(i, n), field.reduce(i+n));
+            }
+        }
+
+        let field = GalloisField::new(8, true, None);
+        assert_eq!(field.add(0b1, 0b10),                field.reduce(0b11));
+        assert_eq!(field.add(0b11, 0b10),               field.reduce(0b01));
+        assert_eq!(field.add(0b101, 0b1010),            field.reduce(0b1111));
+        assert_eq!(field.add(0b1010101, 0b10101010),    field.reduce(0b11111111));
+
+        let field = GalloisField::new(16, true, None);
+        assert_eq!(field.add(0b1, 0b10),                field.reduce(0b11));
+        assert_eq!(field.add(0b11, 0b10),               field.reduce(0b01));
+        assert_eq!(field.add(0b1111, 0b1011),           field.reduce(0b0100));
+        assert_eq!(field.add(0b101, 0b1010),            field.reduce(0b1111));
+        assert_eq!(field.add(0b1000, 0b111),            field.reduce(0b1111));
+        assert_eq!(field.add(0b1010101, 0b10101010),    field.reduce(0b11111111));
+    }
+
+    #[test]
     fn test_gallois_reduce_c2() {
         let field = GalloisField::new(16, true, None);
-        for i in 0..976 {
+        for i in 0..0xf {
+            assert_eq!(field.reduce::<_, u128>(i), i);
             assert_eq!(field.reduce::<_, u128>(i), i);
         }
     }
