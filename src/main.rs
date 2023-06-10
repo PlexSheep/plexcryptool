@@ -76,7 +76,7 @@ pub fn main() {
                             cplex::printing::proc_result_num(result, args);
                         }
                         GalloisActions::ECC(ecc_args) => {
-                            let ec = math::ecc::ElipticCurve::new(field, ecc_args.a, ecc_args.b, args.verbose).expect("Could not create eliptic curve");
+                            let ec = math::ecc::EllipticCurve::new(field, ecc_args.a, ecc_args.b, args.verbose).expect("Could not create eliptic curve");
                             match ecc_args.action {
                                 ECCActions::Neg(ecc_neg_args) => {
                                     let p = ec.new_point(ecc_neg_args.r, ecc_neg_args.s);

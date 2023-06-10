@@ -27,16 +27,16 @@ use pyo3::{prelude::*, exceptions::PyValueError};
 ///
 /// real curves not supported, only in Gallois Fields
 /// Eq and PartialEq might behave badly if the verbosity level is not the same. FIXME
-pub struct ElipticCurve {
+pub struct EllipticCurve {
     field: GalloisField,
     a: u128,
     b: u128,
-    points: Vec<ElipticCurvePoint>,
+    points: Vec<EllipticCurvePoint>,
     verbose: bool,
-    INFINITY_POINT: ElipticCurvePoint
+    INFINITY_POINT: EllipticCurvePoint
 }
 
-impl ElipticCurve {
+impl EllipticCurve {
     pub fn new<T>(field: GalloisField, a: T, b: T, verbose: bool) -> Result<Self, String>
     where
         T: Integer,
@@ -70,10 +70,10 @@ impl ElipticCurve {
                 Check for Diskriminante passed", field.reduce::<_, u128>(d));
         }
 
-        let mut infty = ElipticCurvePoint::new(0, 0);
+        let mut infty = EllipticCurvePoint::new(0, 0);
         infty.is_infinity_point = true;
         let infty = infty;
-        let e = ElipticCurve {
+        let e = EllipticCurve {
             field,
             a,
             b,
@@ -85,8 +85,8 @@ impl ElipticCurve {
     }
 
     /// build a new point in the EC
-    pub fn new_point(&self, r: u128, s: u128) -> Result<ElipticCurvePoint, String> {
-        let p = ElipticCurvePoint::new(r, s);
+    pub fn new_point(&self, r: u128, s: u128) -> Result<EllipticCurvePoint, String> {
+        let p = EllipticCurvePoint::new(r, s);
         if self.verbose {
             println!("{p}")
         }
@@ -119,7 +119,7 @@ impl ElipticCurve {
             return res1 as i128;
         }
 
-    pub fn check_point(&self, p: ElipticCurvePoint, verbose: bool) -> bool {
+    pub fn check_point(&self, p: EllipticCurvePoint, verbose: bool) -> bool {
         if p.is_infinity_point {
             println!("p is infinity: {p}");
             return true;
@@ -152,8 +152,8 @@ impl ElipticCurve {
 
 
     /// add two points
-    pub fn add(&self, p1: ElipticCurvePoint, p2: ElipticCurvePoint) -> 
-        Result<ElipticCurvePoint, String> {
+    pub fn add(&self, p1: EllipticCurvePoint, p2: EllipticCurvePoint) -> 
+        Result<EllipticCurvePoint, String> {
         if self.verbose {
             seperator();
             println!("adding {p1} + {p2}");
@@ -309,13 +309,13 @@ impl ElipticCurve {
     }
 
     /// get negative of a point
-    pub fn neg(&self, p: ElipticCurvePoint) -> ElipticCurvePoint {
+    pub fn neg(&self, p: EllipticCurvePoint) -> EllipticCurvePoint {
         self.new_point(p.r, self.field.reduce::<_, u128>(-(p.s as i128))).expect("negation of \
         point is not on field, math error")
     }
 
     /// multip.s a point by an integer
-    pub fn mul<T>(&self, g: ElipticCurvePoint, t: T) -> Result<ElipticCurvePoint, String>
+    pub fn mul<T>(&self, g: EllipticCurvePoint, t: T) -> Result<EllipticCurvePoint, String>
         where
         T: Integer,
         T: NumCast,
@@ -340,8 +340,8 @@ impl ElipticCurve {
         }
         t_bits.reverse();
         let l = t_bits.len() - 1;
-        let mut lh: ElipticCurvePoint = g;
-        let mut h: ElipticCurvePoint = g;
+        let mut lh: EllipticCurvePoint = g;
+        let mut h: EllipticCurvePoint = g;
         let mut index: usize = l;
         if l == 0 {
             return Ok(h);
@@ -375,8 +375,9 @@ impl ElipticCurve {
 }
 
 #[pymethods]
-impl ElipticCurve {
+impl EllipticCurve {
     #[new]
+    #[pyo3(signature=(field, a, b, verbose = true))]
     pub fn py_new(field: GalloisField, a: i128, b: i128, verbose: bool) -> PyResult<Self> {
         match Self::new(field, a, b, verbose) {
             Ok(v) => {return Ok(v)},
@@ -388,7 +389,7 @@ impl ElipticCurve {
     }
 
     #[pyo3(name="new_point")]
-    pub fn py_new_point(&self, r: u128, s: u128) -> PyResult<ElipticCurvePoint> {
+    pub fn py_new_point(&self, r: u128, s: u128) -> PyResult<EllipticCurvePoint> {
         match self.new_point(r, s) {
             Ok(v) => {return Ok(v)},
             Err(e) => {
@@ -404,13 +405,13 @@ impl ElipticCurve {
     }
 
     #[pyo3(name="check_point", signature=(p, verbose = true))]
-    pub fn py_check_point(&self, p: ElipticCurvePoint, verbose: bool) -> bool {
+    pub fn py_check_point(&self, p: EllipticCurvePoint, verbose: bool) -> bool {
         self.check_point(p, verbose)
     }
 
     #[pyo3(name="add")]
-    pub fn py_add(&self, p1: ElipticCurvePoint, p2: ElipticCurvePoint) 
-        -> PyResult<ElipticCurvePoint> {
+    pub fn py_add(&self, p1: EllipticCurvePoint, p2: EllipticCurvePoint) 
+        -> PyResult<EllipticCurvePoint> {
         match self.add(p1, p2) {
             Ok(v) => {return Ok(v)},
             Err(e) => {
@@ -421,13 +422,13 @@ impl ElipticCurve {
     }
 
     #[pyo3(name="neg")]
-    pub fn py_neg(&self, p: ElipticCurvePoint) -> ElipticCurvePoint {
+    pub fn py_neg(&self, p: EllipticCurvePoint) -> EllipticCurvePoint {
         self.neg(p)
     }
 
     #[pyo3(name="mul")]
-    pub fn py_mul(&self, p1: ElipticCurvePoint, t: u128) 
-        -> PyResult<ElipticCurvePoint> {
+    pub fn py_mul(&self, p1: EllipticCurvePoint, t: u128) 
+        -> PyResult<EllipticCurvePoint> {
         match self.mul(p1, t) {
             Ok(v) => {return Ok(v)},
             Err(e) => {
@@ -435,6 +436,10 @@ impl ElipticCurve {
                 return Err(py_e)
             }
         }
+    }
+
+    pub fn get_infinity_point(&self) -> EllipticCurvePoint {
+        return self.INFINITY_POINT;
     }
 
     fn __str__(&self) -> PyResult<String>   {
@@ -446,7 +451,7 @@ impl ElipticCurve {
     }
 }
 
-impl std::fmt::Display for ElipticCurve{
+impl std::fmt::Display for EllipticCurve{
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "F(X, Y) = Y² - X³ -{}X - {}", self.a, self.b)
     }
@@ -457,18 +462,18 @@ impl std::fmt::Display for ElipticCurve{
 /// represent a specific eliptic curves point
 ///
 /// PartialEq and Eq might behave badly with diffrent verbosity FIXME
-pub struct ElipticCurvePoint {
+pub struct EllipticCurvePoint {
     r: u128,
     s: u128,
     is_infinity_point: bool,
 }
 
 #[pymethods]
-impl ElipticCurvePoint {
+impl EllipticCurvePoint {
     #[new]
     /// create a new point
-    pub fn new(r: u128, s: u128) -> ElipticCurvePoint {
-        ElipticCurvePoint {
+    pub fn new(r: u128, s: u128) -> EllipticCurvePoint {
+        EllipticCurvePoint {
             r,
             s,
             is_infinity_point: false,
@@ -484,7 +489,7 @@ impl ElipticCurvePoint {
     }
 }
 
-impl std::fmt::Display for ElipticCurvePoint {
+impl std::fmt::Display for EllipticCurvePoint {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.is_infinity_point {
             write!(f, "(∞ INFINITY)")
@@ -503,14 +508,14 @@ pub mod test {
     #[test] 
     fn test_eliptic_curve_new() {
         let f = GalloisField::new(7, true, None);
-        let _ = ElipticCurve::new(f, 1, 2, true).expect_err("invalid ec can be created");
-        let _ = ElipticCurve::new(f, -3, 3, true).expect("ec cant be created");
+        let _ = EllipticCurve::new(f, 1, 2, true).expect_err("invalid ec can be created");
+        let _ = EllipticCurve::new(f, -3, 3, true).expect("ec cant be created");
     }
 
     #[test]
     fn test_check_point() {
         let f = GalloisField::new(13, true, None);
-        let ec = ElipticCurve::new(f, -3, 3, true).expect("ec cant be created");
+        let ec = EllipticCurve::new(f, -3, 3, true).expect("ec cant be created");
         // real points
         let p = vec![
             ec.new_point(0,     4   ).unwrap(),
@@ -539,7 +544,7 @@ pub mod test {
     #[test]
     fn test_add_points() {
         let f = GalloisField::new(13, true, None);
-        let ec = ElipticCurve::new(f, -3, 3, true).expect("ec cant be created");
+        let ec = EllipticCurve::new(f, -3, 3, true).expect("ec cant be created");
         let p1 = ec.new_point(1, 1).expect("point is on ec but an error occurs");
         let p2 = ec.new_point(5, 3).expect("point is on ec but an error occurs");
         let p3 = ec.new_point(4, 4).expect("point is on ec but an error occurs");
@@ -548,13 +553,13 @@ pub mod test {
         assert_eq!(ec.add(p1, p2).expect("error for possible addition"), p3);
         assert_eq!(ec.add(p2, p4).expect("error for possible addition"), p1);
         assert_eq!(ec.add(p1, p1).expect("error for possible addition"), p5);
-        let ec = ElipticCurve::new(f, 7, 11, true).expect("ec cant be created");
+        let ec = EllipticCurve::new(f, 7, 11, true).expect("ec cant be created");
         let p1 = ec.new_point(4, 5).expect("point is on ec but an error occurs");
         let p2 = ec.new_point(6, 10).expect("point is on ec but an error occurs");
         assert_eq!(ec.add(p1, p1).expect("error for possible addition"), p2);
 
         let f = GalloisField::new(17, true, None);
-        let ec = ElipticCurve::new(f, -3, 3, true).expect("ec cant be created");
+        let ec = EllipticCurve::new(f, -3, 3, true).expect("ec cant be created");
         let p1 = ec.new_point(3, 2).expect("point is on ec but an error occurs");
         let p2 = ec.new_point(11, 3).expect("point is on ec but an error occurs");
         let p3 = ec.new_point(7, 6).expect("point is on ec but an error occurs");
@@ -564,23 +569,23 @@ pub mod test {
         assert_eq!(ec.add(p4, p4).expect("error for possible addition"), p5);
 
         let f = GalloisField::new(11, true, None);
-        let ec = ElipticCurve::new(f, 1, 1, true).expect("ec cant be created");
+        let ec = EllipticCurve::new(f, 1, 1, true).expect("ec cant be created");
         let p1 = ec.new_point(3, 3).expect("point is on ec but an error occurs");
         let p2 = ec.new_point(6, 5).expect("point is on ec but an error occurs");
         let p3 = ec.new_point(0, 10).expect("point is on ec but an error occurs");
         assert_eq!(ec.add(p1, p2).expect("error for possible addition"), p3);
 
         let f = GalloisField::new(19, true, None);
-        let ec = ElipticCurve::new(f, 7, 13, true).expect("ec cant be created");
+        let ec = EllipticCurve::new(f, 7, 13, true).expect("ec cant be created");
         let p1 = ec.new_point(2, 15).expect("point is on ec but an error occurs");
         let p2 = ec.new_point(6, 10).expect("point is on ec but an error occurs");
         let p3 = ec.new_point(9, 8).expect("point is on ec but an error occurs");
         assert_eq!(ec.add(p1, p2).expect("error for possible addition"), p3);
-        let ec = ElipticCurve::new(f, 10, 3, true).expect("ec cant be created");
+        let ec = EllipticCurve::new(f, 10, 3, true).expect("ec cant be created");
         let p1 = ec.new_point(5, 11).expect("point is on ec but an error occurs");
         let p2 = ec.new_point(5, 8).expect("point is on ec but an error occurs");
         assert_eq!(ec.add(p1, p2).expect("error for possible addition"), ec.INFINITY_POINT);
-        let ec = ElipticCurve::new(f, 7, 13, true).expect("ec cant be created");
+        let ec = EllipticCurve::new(f, 7, 13, true).expect("ec cant be created");
         let p1 = ec.new_point(7, 5).expect("point is on ec but an error occurs");
         let p2 = ec.new_point(2, 15).expect("point is on ec but an error occurs");
         assert_eq!(ec.add(p1, p1).expect("error for possible addition"), p2);
@@ -590,7 +595,7 @@ pub mod test {
     fn test_mul_points() {
         // from ecc lectures
         let f = GalloisField::new(13, true, None);
-        let ec = ElipticCurve::new(f, 7, 11, true).expect("ec cant be created");
+        let ec = EllipticCurve::new(f, 7, 11, true).expect("ec cant be created");
         let p1 = ec.new_point(4, 5).expect("point is on ec but an error occurs");
         let p2 = ec.new_point(6, 10).expect("point is on ec but an error occurs");
         let p3 = ec.new_point(4, 8).expect("point is on ec but an error occurs");
@@ -601,13 +606,13 @@ pub mod test {
         assert_eq!(ec.mul(p2, 4u32).expect("error for possible addition"), p4);
 
         let f = GalloisField::new(13, true, None);
-        let ec = ElipticCurve::new(f, -3, 3, true).expect("ec cant be created");
+        let ec = EllipticCurve::new(f, -3, 3, true).expect("ec cant be created");
         let p1 = ec.new_point(1, 1).expect("point is on ec but an error occurs");
         let p2 = ec.new_point(11, 12).expect("point is on ec but an error occurs");
         assert_eq!(ec.mul(p1, 2u64).expect("error for possible addition"), p2);
 
         let f = GalloisField::new(17, true, None);
-        let ec = ElipticCurve::new(f, 11, 3, true).expect("ec cant be created");
+        let ec = EllipticCurve::new(f, 11, 3, true).expect("ec cant be created");
         let p1 = ec.new_point(5, 8).expect("point is on ec but an error occurs");
         let p2 = ec.new_point(6, 8).expect("point is on ec but an error occurs");
         assert_eq!(ec.mul(p1, 10u128).expect("error for possible addition"), p2);

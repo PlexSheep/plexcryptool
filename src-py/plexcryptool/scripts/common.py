@@ -44,3 +44,9 @@ def int_to_bytearray(n: int, size: int|None = None, endianness = 'big') -> bytea
         ba: bytearray = bytearray(1) + ba
 
     return ba
+
+def ba_to_int(ba: bytearray) -> int:
+    """
+    convert bytearray to int
+    """
+    return int(ba.hex(), 16)
