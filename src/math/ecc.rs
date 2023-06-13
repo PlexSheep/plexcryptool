@@ -79,7 +79,7 @@ impl EllipticCurve {
                     println!("b = {b} != 0 => Curve valid");
                 }
                 else {
-                    println!("b = {b} == 0 => Curve invalid")
+                    println!("b = {b} == 0 => Curve invalid");
                 }
             }
 
