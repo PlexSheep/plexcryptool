@@ -56,18 +56,36 @@ impl EllipticCurve {
             F(X, Y) = Y² - X³ - {a}X - {b}")
         }
 
-        // check diskriminante
-        let d = 4*a.pow(3) + 27*b.pow(2);
-        if field.reduce::<_, u128>(d) == 0 {
-            if verbose {
-                println!("4*{a}³ + 27*{b}² = {d} = {} != 0\n\
-                Check for Diskriminante not passed", field.reduce::<_, u128>(d));
+        // check if the curve is valid
+        if field.cha > 2 {
+            let d = 4*a.pow(3) + 27*b.pow(2);
+            if field.reduce::<_, u128>(d) == 0 {
+                if verbose {
+                    println!("4*{a}³ + 27*{b}² = {d} = {} != 0\n\
+                    Check for Diskriminante not passed", field.reduce::<_, u128>(d));
+                }
+                return Err(String::from("Diskriminante not 0"));
             }
-            return Err(String::from("Diskriminante not 0"));
+            else if verbose {
+                println!("4*{a}³ + 27*{b}² = {d} = {} != 0\n\
+                    Check for Diskriminante passed", field.reduce::<_, u128>(d));
+            }
         }
-        else if verbose {
-            println!("4*{a}³ + 27*{b}² = {d} = {} != 0\n\
-                Check for Diskriminante passed", field.reduce::<_, u128>(d));
+        else {
+            let valid: bool = field.reduce::<_, i128>(b) == 0;
+            
+            if verbose {
+                if valid {
+                    println!("b = {b} != 0 => Curve valid");
+                }
+                else {
+                    println!("b = {b} == 0 => Curve invalid")
+                }
+            }
+
+            if !valid {
+                return Err(String::from("b == 0 => Curve invalid"));
+            }
         }
 
         let mut infty = EllipticCurvePoint::new(0, 0);
@@ -121,7 +139,9 @@ impl EllipticCurve {
 
     pub fn check_point(&self, p: EllipticCurvePoint, verbose: bool) -> bool {
         if p.is_infinity_point {
-            println!("p is infinity: {p}");
+            if self.verbose {
+                println!("p is infinity: {p}");
+            }
             return true;
         }
         let mut valid = true;
@@ -310,8 +330,11 @@ impl EllipticCurve {
 
     /// get negative of a point
     pub fn neg(&self, p: EllipticCurvePoint) -> EllipticCurvePoint {
-        self.new_point(p.r, self.field.reduce::<_, u128>(-(p.s as i128))).expect("negation of \
-        point is not on field, math error")
+        if p.is_infinity_point {
+            return p;
+        }
+        self.new_point(p.r, self.field.reduce(-(p.s as i128))).expect(format!("negation of \
+        point is not on field, math error: {}", p).as_str())
     }
 
     /// multip.s a point by an integer
@@ -327,7 +350,7 @@ impl EllipticCurve {
         }
         let t: usize = num::cast(t).unwrap();
         if t < 1 {
-            return Err(String::from("point multiplication works only if t > 0"));
+            return Ok(self.INFINITY_POINT);
         }
         if self.verbose {
             println!("h = t * g = {t} * {g}\n\
@@ -453,7 +476,18 @@ impl EllipticCurve {
 
 impl std::fmt::Display for EllipticCurve{
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "F(X, Y) = Y² - X³ -{}X - {}", self.a, self.b)
+        if self.field.prime_base {
+            write!(f, "F(X, Y) = Y² - X³ -{}X - {}", self.a, self.b)
+        }
+        else if self.field.cha == 2 {
+            write!(f, "F(X, Y) = Y² + XY + X³ + ({}) * X² + ({})", 
+                   self.field.display(self.a),
+                   self.field.display(self.b),
+                   )
+        }
+        else {
+            write!(f, "ERROR")
+        }
     }
 }
 
